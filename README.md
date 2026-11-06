@@ -1,52 +1,46 @@
-# 🚀 Job Application Tracker
+# Job Application Tracker 🚀
 
-A Python-based Job Application Tracker built using **Flask, PostgreSQL, SQLAlchemy, and Docker**. This project helps users organize and manage job application records, including company names, job roles, and application statuses.
+A backend-focused Job Application Tracker built using **Python Flask, PostgreSQL, SQLAlchemy, and Docker**. This project helps manage job application details through RESTful APIs.
 
 ## 📌 Project Overview
 
-The Job Application Tracker is designed to simplify the process of tracking job applications in one place. It uses a Flask backend and PostgreSQL database to store application details reliably.
+The Job Application Tracker is designed to store and retrieve job application details such as company name, job role, and application status.
+
+The backend provides REST APIs to create new job applications, validate user input, and retrieve saved application records from a PostgreSQL database.
+
+## ✨ Features
+
+- Create new job applications using POST API.
+- Retrieve all job applications using GET API.
+- Store application details in PostgreSQL.
+- Input validation for required fields.
+- JSON-based API responses.
+- Database management using SQLAlchemy.
+- PostgreSQL container setup using Docker.
+- API testing using Postman.
 
 ## 🛠️ Technologies Used
 
-- **Python** – Backend programming
-- **Flask** – Web application framework
-- **Flask-SQLAlchemy** – Database ORM
-- **PostgreSQL** – Relational database
-- **Docker** – Database containerization
-- **Docker Compose** – Container management
-- **HTML, CSS, JavaScript** – Frontend technologies (planned/integrated as applicable)
-
-## ✨ Key Features
-
-- Store job application details.
-- Manage company names and job roles.
-- Track application statuses.
-- PostgreSQL database integration.
-- Docker-based database setup.
-- SQLAlchemy database models.
-- Modular project structure.
+| Technology | Purpose |
+|---|---|
+| Python | Backend programming |
+| Flask | Backend framework |
+| Flask-SQLAlchemy | Database ORM |
+| PostgreSQL | Relational database |
+| Docker | Database containerization |
+| Postman | API testing |
+| Git & GitHub | Version control |
 
 ## 📂 Project Structure
 
 ```text
 Job-Application-Tracker/
 │
-├── api/
-│   └── __init__.py
-│
-├── models/
-│   └── __init__.py
-│
-├── services/
-│   └── __init__.py
-│
-├── tests/
-│
-├── .env
+├── .venv/
 ├── app.py
-├── seed.py
-├── requirements.txt
 ├── docker-compose.yml
+├── requirements.txt
+├── .gitignore
 └── README.md
 ```
 
@@ -55,94 +49,170 @@ Job-Application-Tracker/
 ### 1. Clone the Repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
+```
+
+### 2. Navigate to Project Folder
+
+```bash
 cd Job-Application-Tracker
 ```
 
-### 2. Create a Virtual Environment
+### 3. Create Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-### 3. Activate Virtual Environment
+### 4. Activate Virtual Environment
 
-Windows:
+**Windows:**
 
 ```bash
 .venv\Scripts\activate
 ```
 
-### 4. Install Dependencies
+### 5. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install flask flask-sqlalchemy psycopg2-binary python-dotenv
 ```
 
-### 5. Start PostgreSQL Using Docker
+### 6. Start PostgreSQL Using Docker
+
+Make sure Docker Desktop is running.
 
 ```bash
 docker compose up -d
 ```
 
-### 6. Configure Database
+Check the running container:
 
-Configure your PostgreSQL database connection using environment variables in your `.env` file.
-
-Example:
-
-```env
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/job_tracker
+```bash
+docker ps
 ```
 
-Keep your actual credentials private. Ensure `app.py` is configured to load this environment variable.
-
-### 7. Run the Application
+### 7. Run Flask Application
 
 ```bash
 python app.py
 ```
 
-## 🗄️ Database Details
+Backend server:
 
-**Database:** PostgreSQL
+```text
+http://127.0.0.1:5000
+```
 
-**Database Name:** `job_tracker`
+## 🔗 API Endpoints
 
-**Table:** JobApplication
+### 1. Get All Applications
 
-| Column | Description |
-|---|---|
-| id | Unique application ID |
-| company | Company name |
-| role | Job position |
-| status | Application status |
+**Endpoint:** `GET /applications`
 
-## 🎯 Project Goals
+```text
+http://127.0.0.1:5000/applications
+```
 
-- Improve Python backend development skills.
-- Understand Flask application architecture.
-- Gain practical experience with PostgreSQL.
-- Learn Docker and container management.
-- Build a real-world database-driven application.
+Returns all job application records stored in PostgreSQL.
+
+### 2. Create New Application
+
+**Endpoint:** `POST /applications`
+
+```text
+http://127.0.0.1:5000/applications
+```
+
+**Request Body:**
+
+```json
+{
+  "company": "Wipro",
+  "role": "Python Developer",
+  "status": "APPLIED"
+}
+```
+
+**Successful Response:** `201 Created`
+
+```json
+{
+  "application": {
+    "id": 1,
+    "company": "Wipro",
+    "role": "Python Developer",
+    "status": "APPLIED"
+  },
+  "message": "Application added successfully"
+}
+```
+
+### 3. Input Validation
+
+If the required job role is missing, the API returns:
+
+**Response:** `400 Bad Request`
+
+```json
+{
+  "error": "Job role is required"
+}
+```
+
+## 🗄️ Database Structure
+
+**Table: JobApplication**
+
+| Column | Data Type | Description |
+|---|---|---|
+| id | Integer | Primary Key |
+| company | String(100) | Company Name |
+| role | String(100) | Job Role |
+| status | String(50) | Application Status |
+
+## 🧪 API Testing with Postman
+
+The APIs are tested using Postman.
+
+Tested scenarios:
+
+- POST request with valid application details – `201 Created`.
+- POST request without job role – `400 Bad Request`.
+- GET request to retrieve all applications – `200 OK`.
+- Verified saved records through the GET API.
+
+## 📅 Development Progress
+
+| Day | Task | Status |
+|---|---|---|
+| Day 1 | Docker, PostgreSQL and Flask setup | ✅ Completed |
+| Day 1 | SQLAlchemy model and database connection | ✅ Completed |
+| Day 1 | GET All Applications API | ✅ Completed |
+| Day 2 | POST Application API | ✅ Completed |
+| Day 2 | Input Validation | ✅ Completed |
+| Day 2 | Postman API Testing | ✅ Completed |
 
 ## 🚀 Future Enhancements
 
+- Get application by ID.
+- Update job application details.
+- Delete job applications.
+- Search and filter applications.
+- React frontend integration.
+- Dashboard with application statistics.
 - User authentication and authorization.
-- Add, edit, delete, and search applications.
-- Application status dashboard.
-- Interview scheduling and reminders.
-- Analytics and application statistics.
-- Responsive frontend dashboard.
 
 ## 👨‍💻 Developer
 
 **Prasanna P**
 
-Python Developer | Full Stack Developer
+Aspiring Python Full Stack Developer
 
-GitHub: https://github.com/Prasanna-20740
+- GitHub: https://github.com/Prasanna-20740
 
 ---
 
-⭐ If you find this project useful, consider giving it a star!
+⭐ If you find this project interesting, feel free to explore the repository!
+
+**Built as part of a 60-Day Full Stack Python + React Learning Journey.**
