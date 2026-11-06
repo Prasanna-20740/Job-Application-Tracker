@@ -31,14 +31,16 @@ class JobApplication(db.Model):
 
 
 # Home API
-@app.route("/")
+@app.route("/", methods=["GET"])
 def home():
-    return {
+    return jsonify({
         "message": "Job Application Tracker API is running!",
         "endpoints": {
-            "applications": "/applications"
+            "get_all_applications": "/applications",
+            "create_application": "/applications",
+            "get_application_by_id": "/applications/<id>"
         }
-    }
+    }), 200
 
 
 # Day 1 - Get All Applications API
@@ -46,7 +48,9 @@ def home():
 def get_applications():
     apps = JobApplication.query.all()
 
-    return jsonify([job.to_dict() for job in apps]), 200
+    return jsonify([
+        job.to_dict() for job in apps
+    ]), 200
 
 
 # Day 2 - Create New Application API
@@ -97,16 +101,33 @@ def add_application():
             "application": new_application.to_dict()
         }), 201
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
 
         return jsonify({
-            "error": "Failed to add application",
-            "details": str(e)
+            "error": "Failed to add application"
         }), 500
 
 
-# Create database tables
+# Day 3 - Get Application by ID API
+@app.route("/applications/<int:application_id>", methods=["GET"])
+def get_application_by_id(application_id):
+
+    application = db.session.get(
+        JobApplication,
+        application_id
+    )
+
+    # Handle application not found
+    if application is None:
+        return jsonify({
+            "error": "Application not found"
+        }), 404
+
+    return jsonify(application.to_dict()), 200
+
+
+# Create Database Tables
 with app.app_context():
     db.create_all()
 
