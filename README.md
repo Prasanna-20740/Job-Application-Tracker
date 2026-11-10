@@ -1,55 +1,48 @@
-# 🚀 Job Application Tracker
+# Job Application Tracker
 
-A Job Application Tracker backend application developed using **Python, Flask, PostgreSQL, SQLAlchemy, and Docker**.
+A Python Flask REST API project to manage job applications. This application allows users to create, view, update, and delete job application records using PostgreSQL as the database.
 
-This project helps users manage job application details by creating, retrieving, and tracking applications through RESTful APIs.
+## 🚀 Project Overview
 
-## 📌 Project Overview
-
-The Job Application Tracker is designed to manage job application records, including company name, job role, and application status.
-
-The backend provides REST APIs to create new applications, retrieve all applications, and retrieve a specific application using its ID.
-
-## ✨ Features
-
-- Create new job applications.
-- Retrieve all job applications.
-- Retrieve a specific application by ID.
-- Input validation for required fields.
-- Handle application not found errors.
-- Store data in PostgreSQL.
-- RESTful API development using Flask.
-- API testing using Postman.
-- PostgreSQL database setup using Docker.
+The Job Application Tracker helps users maintain their job application details, including company name, job role, and application status.
 
 ## 🛠️ Technologies Used
 
-| Technology | Purpose |
-|---|---|
-| Python | Backend Programming |
-| Flask | Backend Framework |
-| PostgreSQL | Database |
-| Flask-SQLAlchemy | ORM and Database Operations |
-| Docker | Database Containerization |
-| Postman | API Testing |
-| Git & GitHub | Version Control |
+- Python
+- Flask
+- Flask-SQLAlchemy
+- PostgreSQL
+- Docker
+- Postman
+- Git & GitHub
 
-## 📂 Project Structure
+## ✨ Features
+
+- View all job applications
+- Create a new job application
+- Get application details by ID
+- Update existing application details
+- Delete job applications
+- Input validation
+- Error handling (400, 404, 500)
+- PostgreSQL database integration
+
+## 📁 Project Structure
 
 ```text
 Job-Application-Tracker/
 │
 ├── app.py
-├── docker-compose.yml
 ├── requirements.txt
-├── README.md
+├── .env
 ├── .gitignore
-└── .venv/
+├── docker-compose.yml
+└── README.md
 ```
 
-## ⚙️ Installation & Setup
+## ⚙️ Installation and Setup
 
-### 1. Clone Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
@@ -69,17 +62,19 @@ python -m venv .venv
 
 ### 4. Activate Virtual Environment
 
-```bash
-.venv\Scripts\activate
+Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
 ### 5. Install Dependencies
 
 ```bash
-pip install flask flask-sqlalchemy psycopg2-binary python-dotenv
+pip install flask flask-sqlalchemy psycopg2-binary
 ```
 
-### 6. Start PostgreSQL Using Docker
+### 6. Start PostgreSQL Database
 
 Make sure Docker Desktop is running.
 
@@ -87,11 +82,7 @@ Make sure Docker Desktop is running.
 docker compose up -d
 ```
 
-Verify the container:
-
-```bash
-docker ps
-```
+The PostgreSQL database should be accessible through port `5434`.
 
 ### 7. Run Flask Application
 
@@ -99,158 +90,125 @@ docker ps
 python app.py
 ```
 
-Backend URL:
+Server URL:
 
 ```text
 http://127.0.0.1:5000
 ```
 
-## 🔗 API Endpoints
+## 📡 API Endpoints
 
-### 1. Home API
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | Home API |
+| GET | `/applications` | Get all applications |
+| POST | `/applications` | Create application |
+| GET | `/applications/<id>` | Get application by ID |
+| PUT | `/applications/<id>` | Update application |
+| DELETE | `/applications/<id>` | Delete application |
 
-**Method:** GET
+## 🧪 API Testing
 
-```text
-http://127.0.0.1:5000/
-```
+All APIs are tested using Postman.
 
-Returns the API welcome message and available endpoints.
+### 1. Create Application – POST
 
-### 2. Get All Applications
-
-**Method:** GET
-
-```text
-http://127.0.0.1:5000/applications
-```
-
-Retrieves all job application records from PostgreSQL.
-
-### 3. Create New Application
-
-**Method:** POST
+**URL:**
 
 ```text
-http://127.0.0.1:5000/applications
+POST http://127.0.0.1:5000/applications
 ```
 
 **Request Body:**
 
 ```json
 {
-  "company": "Wipro",
-  "role": "Python Developer",
-  "status": "APPLIED"
-}
-```
-
-**Success Response:** `201 Created`
-
-```json
-{
-  "message": "Application added successfully",
-  "application": {
-    "id": 4,
     "company": "Wipro",
     "role": "Python Developer",
     "status": "APPLIED"
-  }
 }
 ```
 
-### 4. Get Application by ID
+Expected Status: `201 Created`
 
-**Method:** GET
+### 2. Get All Applications – GET
 
 ```text
-http://127.0.0.1:5000/applications/4
+GET http://127.0.0.1:5000/applications
 ```
 
-Retrieves a specific job application using its ID.
+Expected Status: `200 OK`
 
-**Success Response:** `200 OK`
+### 3. Get Application by ID – GET
+
+```text
+GET http://127.0.0.1:5000/applications/4
+```
+
+Expected Status: `200 OK`
+
+### 4. Update Application – PUT
+
+```text
+PUT http://127.0.0.1:5000/applications/4
+```
+
+**Request Body:**
 
 ```json
 {
-  "id": 4,
-  "company": "Wipro",
-  "role": "Python Developer",
-  "status": "APPLIED"
+    "status": "INTERVIEW"
 }
 ```
 
-### 5. Application Not Found
+Expected Status: `200 OK`
 
-If the requested application ID does not exist:
+### 5. Delete Application – DELETE
 
-**Response:** `404 Not Found`
-
-```json
-{
-  "error": "Application not found"
-}
+```text
+DELETE http://127.0.0.1:5000/applications/4
 ```
 
-## 🗄️ Database Structure
+Expected Status: `200 OK`
 
-**Table: JobApplication**
+## ⚠️ Error Handling
 
-| Column | Data Type | Description |
-|---|---|---|
-| id | Integer | Primary Key |
-| company | String(100) | Company Name |
-| role | String(100) | Job Role |
-| status | String(50) | Application Status |
+| Status Code | Description |
+|---|---|
+| 200 | Request successful |
+| 201 | Application created successfully |
+| 400 | Invalid request data |
+| 404 | Application not found |
+| 500 | Internal server error |
 
-## 🧪 API Testing with Postman
-
-The following scenarios have been tested:
-
-| Test Case | Expected Result | Status |
-|---|---|---|
-| Create application | 201 Created | ✅ Passed |
-| Missing job role | 400 Bad Request | ✅ Passed |
-| Get all applications | 200 OK | ✅ Passed |
-| Get application by ID | 200 OK | ✅ Passed |
-| Invalid application ID | 404 Not Found | ✅ Passed |
-
-## 📅 Development Progress
+## 📅 Learning Progress
 
 | Day | Task | Status |
 |---|---|---|
-| Day 1 | Docker and PostgreSQL Setup | ✅ Completed |
-| Day 1 | Flask Application Setup | ✅ Completed |
-| Day 1 | SQLAlchemy Model and Database Connection | ✅ Completed |
-| Day 1 | GET All Applications API | ✅ Completed |
-| Day 2 | POST Application API | ✅ Completed |
-| Day 2 | Input Validation | ✅ Completed |
-| Day 2 | Postman API Testing | ✅ Completed |
-| Day 3 | GET Application by ID API | ✅ Completed |
-| Day 3 | Dynamic URL Parameters | ✅ Completed |
-| Day 3 | 404 Error Handling | ✅ Completed |
+| Day 1 | Flask Setup & PostgreSQL Connection | Completed |
+| Day 2 | POST API & Input Validation | Completed |
+| Day 3 | GET Application by ID & 404 Handling | Completed |
+| Day 4 | PUT Update Application API | Completed |
+| Day 5 | DELETE Application API | Completed |
 
-## 🚀 Future Enhancements
+## 🎯 Learning Outcomes
 
-- Update job application details using PUT API.
-- Delete applications using DELETE API.
-- Search applications by company name.
-- Filter applications by status.
-- React frontend integration.
-- User authentication.
-- Dashboard with application statistics.
+- Understanding Flask REST API development
+- Working with PostgreSQL databases
+- Performing CRUD operations
+- Using SQLAlchemy ORM
+- Implementing API validation and error handling
+- Testing REST APIs with Postman
+- Managing projects using Git and GitHub
 
-## 👨‍💻 Developer
+## 👨‍💻 Author
 
-**Prasanna P**
+**Prasanna**
 
-Python Full Stack Developer Intern
+GitHub: [Prasanna-20740](https://github.com/Prasanna-20740)
 
-GitHub: https://github.com/Prasanna-20740
-
-**Project Repository:**  
-https://github.com/Prasanna-20740/Job-Application-Tracker
+Project Repository: [Job Application Tracker](https://github.com/Prasanna-20740/Job-Application-Tracker)
 
 ---
 
-⭐ Developed as part of a 60-Day Full Stack Python + React Learning Journey.
+⭐ If you find this project useful, consider giving it a star!
