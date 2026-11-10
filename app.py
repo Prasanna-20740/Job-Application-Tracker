@@ -1,3 +1,4 @@
+
 from datetime import date
 from enum import Enum
 import logging
@@ -16,6 +17,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader
+from schemas.application_schema import ApplicationSchema
+from marshmallow import ValidationError
 
 # --------------------------------------------------
 # Logger Configuration
@@ -145,7 +148,6 @@ class JobApplication(db.Model):
         nullable=True
     )
 
-    # Resume file path
     resume_path = db.Column(
         db.String(255),
         nullable=True
@@ -189,7 +191,6 @@ def parse_application_data(data, creating=False):
 
     parsed = {}
 
-    # Company validation
     if creating and "company" not in data:
         raise ValueError("Company is required")
 
@@ -201,7 +202,6 @@ def parse_application_data(data, creating=False):
 
         parsed["company"] = company.strip()
 
-    # Role validation
     if creating and "role" not in data:
         raise ValueError("Role is required")
 
@@ -213,7 +213,6 @@ def parse_application_data(data, creating=False):
 
         parsed["role"] = role.strip()
 
-    # Notes validation
     if "notes" in data:
         notes = data["notes"]
 
@@ -224,7 +223,6 @@ def parse_application_data(data, creating=False):
             notes.strip() if isinstance(notes, str) else None
         )
 
-    # Status validation
     if "status" in data:
         status = data["status"]
 
@@ -245,7 +243,6 @@ def parse_application_data(data, creating=False):
                 f"Invalid status. Allowed values: {valid_statuses}"
             )
 
-    # Applied date validation
     if "applied_date" in data:
         applied_date = data["applied_date"]
 
@@ -262,7 +259,6 @@ def parse_application_data(data, creating=False):
                 "Invalid applied_date. Use YYYY-MM-DD format"
             )
 
-    # User ID validation
     if "user_id" in data:
         user_id = data["user_id"]
 
@@ -283,7 +279,6 @@ def delete_resume_file(resume_path):
     if not resume_path:
         return
 
-    # Only delete files inside the configured uploads folder
     filename = os.path.basename(resume_path)
 
     if not filename:
@@ -490,7 +485,9 @@ def get_applications():
         logger.exception("Error retrieving applications")
 
         return jsonify({
-            "error": "Internal server error"
+            "error": "Internal server error",
+            "details": {},
+            "status_code": 500
         }), 500
 
 
@@ -504,10 +501,7 @@ def create_application():
     data = request.get_json(silent=True)
 
     try:
-        parsed = parse_application_data(
-            data,
-            creating=True
-        )
+        parsed = ApplicationSchema().load(data or {})
 
         application = application_service.create_application(
             company=parsed["company"],
@@ -523,17 +517,27 @@ def create_application():
             "application": application.to_dict()
         }), 201
 
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
+    except ValidationError as error:
+        return jsonify({
+            "error": "Validation failed",
+            "details": error.messages,
+            "status_code": 400
+        }), 400
 
     except DuplicateApplication as error:
-        return jsonify({"error": str(error)}), 409
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 409
+        }), 409
 
     except Exception:
         logger.exception("Error creating application")
 
         return jsonify({
-            "error": "Internal server error"
+            "error": "Internal server error",
+            "details": {},
+            "status_code": 500
         }), 500
 
 
@@ -552,13 +556,19 @@ def get_application(application_id):
         return jsonify(application.to_dict()), 200
 
     except ApplicationNotFound as error:
-        return jsonify({"error": str(error)}), 404
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 404
+        }), 404
 
     except Exception:
         logger.exception("Error retrieving application")
 
         return jsonify({
-            "error": "Internal server error"
+            "error": "Internal server error",
+            "details": {},
+            "status_code": 500
         }), 500
 
 
@@ -572,11 +582,29 @@ def update_application(application_id):
     data = request.get_json(silent=True)
 
     try:
-        parsed = parse_application_data(data)
+        if not isinstance(data, dict) or not data:
+            return jsonify({
+                "error": "At least one field is required",
+                "details": {},
+                "status_code": 400
+            }), 400
+
+        # Validate only the fields provided by the user
+        parsed = ApplicationSchema().load(
+            data,
+            partial=True
+        )
+
+        # Remove default values for fields not included in PUT request
+        for field in ("status", "applied_date", "notes"):
+            if field not in data:
+                parsed.pop(field, None)
 
         if not parsed:
             return jsonify({
-                "error": "At least one field is required"
+                "error": "At least one valid field is required",
+                "details": {},
+                "status_code": 400
             }), 400
 
         application = application_service.update_application(
@@ -589,20 +617,41 @@ def update_application(application_id):
             "application": application.to_dict()
         }), 200
 
+    except ValidationError as error:
+        return jsonify({
+            "error": "Validation failed",
+            "details": error.messages,
+            "status_code": 400
+        }), 400
+
     except ValueError as error:
-        return jsonify({"error": str(error)}), 400
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 400
+        }), 400
 
     except ApplicationNotFound as error:
-        return jsonify({"error": str(error)}), 404
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 404
+        }), 404
 
     except DuplicateApplication as error:
-        return jsonify({"error": str(error)}), 409
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 409
+        }), 409
 
     except Exception:
         logger.exception("Error updating application")
 
         return jsonify({
-            "error": "Internal server error"
+            "error": "Internal server error",
+            "details": {},
+            "status_code": 500
         }), 500
 
 
@@ -624,7 +673,6 @@ def delete_application(application_id):
             application_id
         )
 
-        # Delete physical resume after database deletion succeeds
         delete_resume_file(resume_path)
 
         return jsonify({
@@ -633,13 +681,19 @@ def delete_application(application_id):
         }), 200
 
     except ApplicationNotFound as error:
-        return jsonify({"error": str(error)}), 404
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 404
+        }), 404
 
     except Exception:
         logger.exception("Error deleting application")
 
         return jsonify({
-            "error": "Internal server error"
+            "error": "Internal server error",
+            "details": {},
+            "status_code": 500
         }), 500
 
 
@@ -677,7 +731,6 @@ def upload_resume(application_id):
                 "error": "Only PDF files are allowed"
             }), 400
 
-        # Check actual PDF signature
         file_signature = file.stream.read(4)
         file.stream.seek(0)
 
@@ -695,12 +748,10 @@ def upload_resume(application_id):
             unique_filename
         )
 
-        # Save the uploaded file
         file.save(file_path)
 
         old_resume_path = application.resume_path
 
-        # Store relative path in database
         application.resume_path = os.path.join(
             f"uploads/{unique_filename}"
         )
@@ -716,7 +767,6 @@ def upload_resume(application_id):
 
             raise
 
-        # Remove previous resume after successful update
         delete_resume_file(old_resume_path)
 
         logger.info(
@@ -734,14 +784,20 @@ def upload_resume(application_id):
         }), 201
 
     except ApplicationNotFound as error:
-        return jsonify({"error": str(error)}), 404
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 404
+        }), 404
 
     except Exception:
         db.session.rollback()
         logger.exception("Error uploading resume")
 
         return jsonify({
-            "error": "Failed to upload resume"
+            "error": "Failed to upload resume",
+            "details": {},
+            "status_code": 500
         }), 500
 
 
@@ -763,7 +819,9 @@ def serve_resume(filename):
         logger.exception("Error serving resume")
 
         return jsonify({
-            "error": "Resume file not found"
+            "error": "Resume file not found",
+            "details": {},
+            "status_code": 404
         }), 404
 
 
@@ -784,7 +842,9 @@ def get_resume_skills(application_id):
 
         if not application.resume_path:
             return jsonify({
-                "error": "No resume uploaded for this application"
+                "error": "No resume uploaded for this application",
+                "details": {},
+                "status_code": 404
             }), 404
 
         filename = os.path.basename(application.resume_path)
@@ -796,7 +856,9 @@ def get_resume_skills(application_id):
 
         if not os.path.isfile(file_path):
             return jsonify({
-                "error": "Resume file not found"
+                "error": "Resume file not found",
+                "details": {},
+                "status_code": 404
             }), 404
 
         extracted_text = extract_pdf_text(file_path)
@@ -810,29 +872,69 @@ def get_resume_skills(application_id):
         }), 200
 
     except ApplicationNotFound as error:
-        return jsonify({"error": str(error)}), 404
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 404
+        }), 404
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 400
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 400
+        }), 400
 
     except Exception:
         logger.exception("Error extracting resume skills")
 
         return jsonify({
-            "error": "Failed to extract resume text"
+            "error": "Failed to extract resume text",
+            "details": {},
+            "status_code": 500
         }), 500
 
 
 # --------------------------------------------------
-# File Size Error Handler
+# Global Error Handlers
 # --------------------------------------------------
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+        "error": "Bad request",
+        "details": {},
+        "status_code": 400
+    }), 400
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "error": "Resource not found",
+        "details": {},
+        "status_code": 404
+    }), 404
+
 
 @app.errorhandler(413)
 def file_too_large(error):
+    return jsonify({
+        "error": "File size exceeds the 5 MB limit",
+        "details": {},
+        "status_code": 413
+    }), 413
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    logger.error("Internal server error: %s", error)
 
     return jsonify({
-        "error": "File size exceeds the 5 MB limit"
-    }), 413
+        "error": "Internal server error",
+        "details": {},
+        "status_code": 500
+    }), 500
 
 
 # --------------------------------------------------
