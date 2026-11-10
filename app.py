@@ -39,7 +39,8 @@ def home():
             "get_all_applications": "/applications",
             "create_application": "/applications",
             "get_application_by_id": "/applications/<id>",
-            "update_application": "/applications/<id>"
+            "update_application": "/applications/<id>",
+            "delete_application": "/applications/<id>"
         }
     }), 200
 
@@ -47,6 +48,7 @@ def home():
 # Day 1 - Get All Applications API
 @app.route("/applications", methods=["GET"])
 def get_applications():
+
     apps = JobApplication.query.all()
 
     return jsonify([
@@ -60,6 +62,7 @@ def add_application():
 
     data = request.get_json(silent=True)
 
+    # Validate JSON data
     if not isinstance(data, dict):
         return jsonify({
             "error": "Valid JSON data is required"
@@ -87,6 +90,7 @@ def add_application():
             "error": "Valid application status is required"
         }), 400
 
+    # Create new application
     new_application = JobApplication(
         company=company.strip(),
         role=role.strip(),
@@ -119,6 +123,7 @@ def get_application_by_id(application_id):
         application_id
     )
 
+    # Check application exists
     if application is None:
         return jsonify({
             "error": "Application not found"
@@ -197,6 +202,43 @@ def update_application(application_id):
 
         return jsonify({
             "error": "Failed to update application"
+        }), 500
+
+
+# Day 5 - Delete Application API
+@app.route("/applications/<int:application_id>", methods=["DELETE"])
+def delete_application(application_id):
+
+    # Find application by ID
+    application = db.session.get(
+        JobApplication,
+        application_id
+    )
+
+    # Check application exists
+    if application is None:
+        return jsonify({
+            "error": "Application not found"
+        }), 404
+
+    try:
+        # Save application details before deletion
+        deleted_application = application.to_dict()
+
+        # Delete application
+        db.session.delete(application)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Application deleted successfully",
+            "deleted_application": deleted_application
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+
+        return jsonify({
+            "error": "Failed to delete application"
         }), 500
 
 
