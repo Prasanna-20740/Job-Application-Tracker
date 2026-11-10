@@ -245,3 +245,39 @@ Tested operations include:
 - POST application
 - GET application by ID
 - PUT application
+- DELETE application
+- Resume PDF upload
+- PDF file access
+- Resume text extraction
+- Skill detection
+- Resume file deletion
+
+## 📌 Current Project Progress
+
+| Day | Work Completed |
+|---|---|
+| Day 1 | Project setup, Python environment, Flask and PostgreSQL Docker connection |
+| Day 2 | Database models, User model, JobApplication model, Enum and migrations |
+| Day 3 | CRUD APIs, Service Layer, custom exceptions and logging |
+| Day 4 | Resume upload, PDF parsing, skill extraction and file deletion |
+
+## 🔮 Future Enhancements
+
+- User authentication and authorization.
+- JWT-based authentication.
+- Multi-user application management.
+- Advanced resume skill extraction.
+- Search and filtering.
+- Dashboard and analytics.
+- Frontend integration.
+- Cloud-based resume storage.
+
+## 👨‍💻 Author
+
+**Prasanna**
+
+GitHub: https://github.com/Prasanna-20740
+
+## 📜 License
+
+This project is developed for internship training and learning purposes.
