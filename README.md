@@ -1,10 +1,12 @@
-# Job Application Tracker
+# Job Application Tracker SaaS
 
-A Python Flask REST API project to manage job applications. This application allows users to create, view, update, and delete job application records using PostgreSQL as the database.
+A Flask-based Job Application Tracker that helps users manage job applications, track application statuses, upload resumes, and extract skills from PDF resumes.
 
 ## 🚀 Project Overview
 
-The Job Application Tracker helps users maintain their job application details, including company name, job role, and application status.
+The Job Application Tracker is a backend application developed using Python, Flask, PostgreSQL, and SQLAlchemy.
+
+It provides REST APIs to create, view, update, and delete job applications. It also supports resume uploads, PDF text extraction, and basic skill detection.
 
 ## 🛠️ Technologies Used
 
@@ -13,19 +15,51 @@ The Job Application Tracker helps users maintain their job application details, 
 - Flask-SQLAlchemy
 - PostgreSQL
 - Docker
+- Flask-Migrate
+- Alembic
 - Postman
-- Git & GitHub
+- PyPDF2
+- Werkzeug
+- Git and GitHub
 
 ## ✨ Features
 
-- View all job applications
-- Create a new job application
-- Get application details by ID
-- Update existing application details
-- Delete job applications
-- Input validation
-- Error handling (400, 404, 500)
-- PostgreSQL database integration
+### 1. Job Application Management
+- Create a new job application.
+- View all job applications.
+- View an application by ID.
+- Update application details.
+- Delete a job application.
+
+### 2. Application Status Tracking
+
+Supported statuses:
+
+- APPLIED
+- PHONE_SCREEN
+- INTERVIEW
+- OFFER
+- REJECTED
+
+### 3. Resume Management
+- Upload PDF resumes.
+- Secure uploaded filenames.
+- Maximum upload size: 5 MB.
+- Store resume paths in PostgreSQL.
+- Access uploaded resumes through an API.
+- Automatically delete the resume when its application is deleted.
+
+### 4. Resume Parsing
+- Extract text from PDF resumes using PyPDF2.
+- Identify skills using keyword matching.
+- Return extracted text and detected skills through an API.
+
+### 5. Backend Architecture
+- SQLAlchemy database models.
+- Service layer for application business logic.
+- Custom exception handling.
+- Application logging.
+- Database migrations using Flask-Migrate and Alembic.
 
 ## 📁 Project Structure
 
@@ -33,182 +67,217 @@ The Job Application Tracker helps users maintain their job application details, 
 Job-Application-Tracker/
 │
 ├── app.py
-├── requirements.txt
-├── .env
+├── services/
+│   └── application_service.py
+│
+├── migrations/
+│
+├── uploads/
+│
+├── .venv/
 ├── .gitignore
-├── docker-compose.yml
-└── README.md
+├── README.md
+└── requirements.txt
 ```
 
 ## ⚙️ Installation and Setup
 
-### 1. Clone the Repository
+### Prerequisites
+
+- Python 3.x
+- Docker Desktop
+- PostgreSQL
+- Git
+- Postman
+
+### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
 ```
 
-### 2. Navigate to Project Folder
-
 ```bash
 cd Job-Application-Tracker
 ```
 
-### 3. Create Virtual Environment
+### Step 2: Create a Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-### 4. Activate Virtual Environment
-
-Windows PowerShell:
+Activate the environment on Windows PowerShell:
 
 ```powershell
-.venv\Scripts\Activate.ps1
+.venv\Scripts\activate
 ```
 
-### 5. Install Dependencies
+### Step 3: Install Dependencies
 
 ```bash
-pip install flask flask-sqlalchemy psycopg2-binary
+pip install -r requirements.txt
 ```
 
-### 6. Start PostgreSQL Database
+### Step 4: Start PostgreSQL Using Docker
 
-Make sure Docker Desktop is running.
+Ensure your PostgreSQL Docker container is running.
+
+Database configuration currently used in the project:
+
+```text
+Database: job_tracker
+Username: postgres
+Password: postgres123
+Host: localhost
+Port: 5434
+```
+
+### Step 5: Apply Database Migrations
 
 ```bash
-docker compose up -d
+flask db upgrade
 ```
 
-The PostgreSQL database should be accessible through port `5434`.
-
-### 7. Run Flask Application
+### Step 6: Run the Flask Application
 
 ```bash
 python app.py
 ```
 
-Server URL:
+The application runs at:
 
 ```text
 http://127.0.0.1:5000
 ```
 
-## 📡 API Endpoints
+## 🔗 API Endpoints
+
+Base URL:
+
+```text
+http://127.0.0.1:5000
+```
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/` | Home API |
 | GET | `/applications` | Get all applications |
-| POST | `/applications` | Create application |
+| POST | `/applications` | Create an application |
 | GET | `/applications/<id>` | Get application by ID |
-| PUT | `/applications/<id>` | Update application |
-| DELETE | `/applications/<id>` | Delete application |
+| PUT | `/applications/<id>` | Update an application |
+| DELETE | `/applications/<id>` | Delete an application |
+| POST | `/applications/<id>/resume` | Upload a resume |
+| GET | `/files/<filename>` | Access an uploaded file |
+| GET | `/applications/<id>/resume/skills` | Extract resume text and skills |
+
+## 📄 Resume Upload API
+
+**Method:** POST
+
+```text
+/applications/2/resume
+```
+
+Use Postman:
+
+1. Select POST method.
+2. Enter the resume upload URL.
+3. Select Body → form-data.
+4. Add a key named `file`.
+5. Change the key type to File.
+6. Select a PDF resume.
+7. Click Send.
+
+## 🧠 Resume Skills Extraction API
+
+**Method:** GET
+
+```text
+/applications/2/resume/skills
+```
+
+Example response:
+
+```json
+{
+    "application_id": 2,
+    "extracted_text": "Resume content extracted from PDF",
+    "skills": [
+        "React",
+        "HTML",
+        "CSS",
+        "MongoDB"
+    ]
+}
+```
+
+The extracted skills depend on the contents of the uploaded PDF and the configured keyword list.
+
+## 🗄️ Database Models
+
+### User Model
+
+Stores user information:
+
+- id
+- username
+- email
+
+### JobApplication Model
+
+Stores job application information:
+
+- id
+- company
+- role
+- status
+- applied_date
+- notes
+- user_id
+- resume_path
 
 ## 🧪 API Testing
 
-All APIs are tested using Postman.
+All REST API endpoints can be tested using Postman.
 
-### 1. Create Application – POST
+Tested operations include:
 
-**URL:**
+- GET applications
+- POST application
+- GET application by ID
+- PUT application
+- DELETE application
+- Resume PDF upload
+- PDF file access
+- Resume text extraction
+- Skill detection
+- Resume file deletion
 
-```text
-POST http://127.0.0.1:5000/applications
-```
+## 📌 Current Project Progress
 
-**Request Body:**
-
-```json
-{
-    "company": "Wipro",
-    "role": "Python Developer",
-    "status": "APPLIED"
-}
-```
-
-Expected Status: `201 Created`
-
-### 2. Get All Applications – GET
-
-```text
-GET http://127.0.0.1:5000/applications
-```
-
-Expected Status: `200 OK`
-
-### 3. Get Application by ID – GET
-
-```text
-GET http://127.0.0.1:5000/applications/4
-```
-
-Expected Status: `200 OK`
-
-### 4. Update Application – PUT
-
-```text
-PUT http://127.0.0.1:5000/applications/4
-```
-
-**Request Body:**
-
-```json
-{
-    "status": "INTERVIEW"
-}
-```
-
-Expected Status: `200 OK`
-
-### 5. Delete Application – DELETE
-
-```text
-DELETE http://127.0.0.1:5000/applications/4
-```
-
-Expected Status: `200 OK`
-
-## ⚠️ Error Handling
-
-| Status Code | Description |
+| Day | Work Completed |
 |---|---|
-| 200 | Request successful |
-| 201 | Application created successfully |
-| 400 | Invalid request data |
-| 404 | Application not found |
-| 500 | Internal server error |
+| Day 1 | Project setup, Python environment, Flask and PostgreSQL Docker connection |
+| Day 2 | Database models, User model, JobApplication model, Enum and migrations |
+| Day 3 | CRUD APIs, Service Layer, custom exceptions and logging |
+| Day 4 | Resume upload, PDF parsing, skill extraction and file deletion |
 
-## 📅 Learning Progress
+## 🔮 Future Enhancements
 
-| Day | Task | Status |
-|---|---|---|
-| Day 1 | Flask Setup & PostgreSQL Connection | Completed |
-| Day 2 | POST API & Input Validation | Completed |
-| Day 3 | GET Application by ID & 404 Handling | Completed |
-| Day 4 | PUT Update Application API | Completed |
-| Day 5 | DELETE Application API | Completed |
-
-## 🎯 Learning Outcomes
-
-- Understanding Flask REST API development
-- Working with PostgreSQL databases
-- Performing CRUD operations
-- Using SQLAlchemy ORM
-- Implementing API validation and error handling
-- Testing REST APIs with Postman
-- Managing projects using Git and GitHub
+- User authentication and authorization.
+- JWT-based authentication.
+- Multi-user application management.
+- Advanced resume skill extraction.
+- Search and filtering.
+- Dashboard and analytics.
+- Frontend integration.
+- Cloud-based resume storage.
 
 ## 👨‍💻 Author
 
 **Prasanna**
 
-GitHub: [Prasanna-20740](https://github.com/Prasanna-20740)
+GitHub: https://github.com/Prasanna-20740
 
-Project Repository: [Job Application Tracker](https://github.com/Prasanna-20740/Job-Application-Tracker)
+## 📜 License
 
----
-
-⭐ If you find this project useful, consider giving it a star!
+This project is developed for internship training and learning purposes.
