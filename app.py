@@ -38,7 +38,8 @@ def home():
         "endpoints": {
             "get_all_applications": "/applications",
             "create_application": "/applications",
-            "get_application_by_id": "/applications/<id>"
+            "get_application_by_id": "/applications/<id>",
+            "update_application": "/applications/<id>"
         }
     }), 200
 
@@ -59,7 +60,6 @@ def add_application():
 
     data = request.get_json(silent=True)
 
-    # Validate JSON data
     if not isinstance(data, dict):
         return jsonify({
             "error": "Valid JSON data is required"
@@ -69,23 +69,24 @@ def add_application():
     role = data.get("role")
     status = data.get("status", "APPLIED")
 
-    # Validate required fields
+    # Validate company
     if not isinstance(company, str) or not company.strip():
         return jsonify({
             "error": "Company name is required"
         }), 400
 
+    # Validate role
     if not isinstance(role, str) or not role.strip():
         return jsonify({
             "error": "Job role is required"
         }), 400
 
+    # Validate status
     if not isinstance(status, str) or not status.strip():
         return jsonify({
             "error": "Valid application status is required"
         }), 400
 
-    # Create new application
     new_application = JobApplication(
         company=company.strip(),
         role=role.strip(),
@@ -118,13 +119,85 @@ def get_application_by_id(application_id):
         application_id
     )
 
-    # Handle application not found
     if application is None:
         return jsonify({
             "error": "Application not found"
         }), 404
 
     return jsonify(application.to_dict()), 200
+
+
+# Day 4 - Update Application API
+@app.route("/applications/<int:application_id>", methods=["PUT"])
+def update_application(application_id):
+
+    # Find application by ID
+    application = db.session.get(
+        JobApplication,
+        application_id
+    )
+
+    # Check application exists
+    if application is None:
+        return jsonify({
+            "error": "Application not found"
+        }), 404
+
+    # Get JSON data
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict) or not data:
+        return jsonify({
+            "error": "Valid JSON data is required"
+        }), 400
+
+    # Validate and update company
+    if "company" in data:
+        company = data["company"]
+
+        if not isinstance(company, str) or not company.strip():
+            return jsonify({
+                "error": "Valid company name is required"
+            }), 400
+
+        application.company = company.strip()
+
+    # Validate and update role
+    if "role" in data:
+        role = data["role"]
+
+        if not isinstance(role, str) or not role.strip():
+            return jsonify({
+                "error": "Valid job role is required"
+            }), 400
+
+        application.role = role.strip()
+
+    # Validate and update status
+    if "status" in data:
+        status = data["status"]
+
+        if not isinstance(status, str) or not status.strip():
+            return jsonify({
+                "error": "Valid application status is required"
+            }), 400
+
+        application.status = status.strip().upper()
+
+    try:
+        db.session.commit()
+
+        return jsonify({
+            "message": "Application updated successfully",
+            "application": application.to_dict()
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+
+        return jsonify({
+            "error": "Failed to update application"
+        }), 500
 
 
 # Create Database Tables
