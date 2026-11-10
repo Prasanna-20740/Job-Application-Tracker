@@ -1,230 +1,125 @@
 # Job Application Tracker SaaS
 
-A Flask-based Job Application Tracker that helps users manage job applications, track application statuses, upload resumes, and extract skills from PDF resumes.
+A Flask-based backend application to manage and track job applications. This project provides REST APIs for creating, viewing, updating, and deleting job applications with PostgreSQL database integration, service-layer architecture, request validation, and standardized error handling.
 
-## 🚀 Project Overview
+## Tech Stack
 
-The Job Application Tracker is a backend application developed using Python, Flask, PostgreSQL, and SQLAlchemy.
-
-It provides REST APIs to create, view, update, and delete job applications. It also supports resume uploads, PDF text extraction, and basic skill detection.
-
-## 🛠️ Technologies Used
-
-- Python
+- Python 3
 - Flask
 - Flask-SQLAlchemy
 - PostgreSQL
 - Docker
 - Flask-Migrate
 - Alembic
-- Postman
-- PyPDF2
-- Werkzeug
-- Git and GitHub
-
-## ✨ Features
-
-### 1. Job Application Management
-- Create a new job application.
-- View all job applications.
-- View an application by ID.
-- Update application details.
-- Delete a job application.
-
-### 2. Application Status Tracking
-
-Supported statuses:
-
-- APPLIED
-- PHONE_SCREEN
-- INTERVIEW
-- OFFER
-- REJECTED
-
-### 3. Resume Management
-- Upload PDF resumes.
-- Secure uploaded filenames.
-- Maximum upload size: 5 MB.
-- Store resume paths in PostgreSQL.
-- Access uploaded resumes through an API.
-- Automatically delete the resume when its application is deleted.
-
-### 4. Resume Parsing
-- Extract text from PDF resumes using PyPDF2.
-- Identify skills using keyword matching.
-- Return extracted text and detected skills through an API.
-
-### 5. Backend Architecture
-- SQLAlchemy database models.
-- Service layer for application business logic.
-- Custom exception handling.
-- Application logging.
-- Database migrations using Flask-Migrate and Alembic.
-
-## 📁 Project Structure
-
-```text
-Job-Application-Tracker/
-│
-├── app.py
-├── services/
-│   └── application_service.py
-│
-├── migrations/
-│
-├── uploads/
-│
-├── .venv/
-├── .gitignore
-├── README.md
-└── requirements.txt
-```
-
-## ⚙️ Installation and Setup
-
-### Prerequisites
-
-- Python 3.x
-- Docker Desktop
-- PostgreSQL
-- Git
+- Marshmallow
 - Postman
 
-### Step 1: Clone the Repository
+---
 
-```bash
-git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
-```
+## Project Features
 
-```bash
-cd Job-Application-Tracker
-```
+### Day 1 – Project Setup and Database Connection
 
-### Step 2: Create a Virtual Environment
+- Defined the Job Application Tracker SaaS use case.
+- Created and configured Python virtual environment.
+- Installed Flask and Flask-SQLAlchemy.
+- Configured PostgreSQL using Docker.
+- Connected Flask application with PostgreSQL.
+- Created the initial project structure.
 
-```bash
-python -m venv .venv
-```
+### Day 2 – Database Models and Migrations
 
-Activate the environment on Windows PowerShell:
+- Created User model for multi-user support.
+- Created JobApplication model.
+- Implemented application fields:
+  - ID
+  - Company
+  - Role
+  - Status
+  - Applied Date
+  - Notes
+  - User ID
+- Implemented ApplicationStatus Enum:
+  - APPLIED
+  - PHONE_SCREEN
+  - INTERVIEW
+  - OFFER
+  - REJECTED
+- Established relationship between User and JobApplication.
+- Configured Flask-Migrate and Alembic.
+- Created and applied database migrations.
 
-```powershell
-.venv\Scripts\activate
-```
+### Day 3 – Service Layer and CRUD Operations
 
-### Step 3: Install Dependencies
+- Implemented Application Service Layer.
+- Separated business logic from API routes.
+- Implemented CRUD operations:
+  - Create application
+  - Get all applications
+  - Get application by ID
+  - Update application
+  - Delete application
+- Implemented custom exceptions:
+  - ApplicationNotFound
+  - DuplicateApplication
+- Added logging for application operations.
+- Implemented duplicate application checking.
+- Tested CRUD APIs using Postman.
 
-```bash
-pip install -r requirements.txt
-```
+### Day 4 – Request Validation and Error Handling
 
-### Step 4: Start PostgreSQL Using Docker
-
-Ensure your PostgreSQL Docker container is running.
-
-Database configuration currently used in the project:
-
-```text
-Database: job_tracker
-Username: postgres
-Password: postgres123
-Host: localhost
-Port: 5434
-```
-
-### Step 5: Apply Database Migrations
-
-```bash
-flask db upgrade
-```
-
-### Step 6: Run the Flask Application
-
-```bash
-python app.py
-```
-
-The application runs at:
-
-```text
-http://127.0.0.1:5000
-```
-
-## 🔗 API Endpoints
-
-Base URL:
-
-```text
-http://127.0.0.1:5000
-```
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/applications` | Get all applications |
-| POST | `/applications` | Create an application |
-| GET | `/applications/<id>` | Get application by ID |
-| PUT | `/applications/<id>` | Update an application |
-| DELETE | `/applications/<id>` | Delete an application |
-| POST | `/applications/<id>/resume` | Upload a resume |
-| GET | `/files/<filename>` | Access an uploaded file |
-| GET | `/applications/<id>/resume/skills` | Extract resume text and skills |
-
-## 📄 Resume Upload API
-
-**Method:** POST
-
-```text
-/applications/2/resume
-```
-
-Use Postman:
-
-1. Select POST method.
-2. Enter the resume upload URL.
-3. Select Body → form-data.
-4. Add a key named `file`.
-5. Change the key type to File.
-6. Select a PDF resume.
-7. Click Send.
-
-## 🧠 Resume Skills Extraction API
-
-**Method:** GET
-
-```text
-/applications/2/resume/skills
-```
-
-Example response:
+- Integrated Marshmallow for request data validation.
+- Created ApplicationSchema for validating application data.
+- Implemented company name validation (cannot be empty).
+- Implemented applied date validation (cannot be in the future).
+- Implemented application status validation.
+- Integrated schema validation into POST and PUT APIs.
+- Implemented standardized error response format:
 
 ```json
 {
-    "application_id": 2,
-    "extracted_text": "Resume content extracted from PDF",
-    "skills": [
-        "React",
-        "HTML",
-        "CSS",
-        "MongoDB"
-    ]
+    "error": "Validation failed",
+    "details": {},
+    "status_code": 400
 }
 ```
 
-The extracted skills depend on the contents of the uploaded PDF and the configured keyword list.
+- Implemented Flask error handlers:
+  - 400 – Bad Request
+  - 404 – Resource Not Found
+  - 413 – File Too Large
+  - 500 – Internal Server Error
+- Tested valid and invalid requests using Postman.
 
-## 🗄️ Database Models
+---
 
-### User Model
+## API Endpoints
 
-Stores user information:
+Base URL: `http://127.0.0.1:5000`
+
+| HTTP Method | Endpoint | Description |
+|---|---|---|
+| POST | `/applications` | Create a new application |
+| GET | `/applications` | Retrieve all applications |
+| GET | `/applications/<application_id>` | Retrieve application by ID |
+| PUT | `/applications/<application_id>` | Update an application |
+| DELETE | `/applications/<application_id>` | Delete an application |
+
+---
+
+## Database Structure
+
+**Database:** PostgreSQL
+
+**Tables:**
+
+### users
 
 - id
 - username
 - email
 
-### JobApplication Model
-
-Stores job application information:
+### job_application
 
 - id
 - company
@@ -235,49 +130,120 @@ Stores job application information:
 - user_id
 - resume_path
 
-## 🧪 API Testing
+Note: `resume_path` is included in the database model for the resume management functionality developed later.
 
-All REST API endpoints can be tested using Postman.
+---
 
-Tested operations include:
+## Project Setup
 
-- GET applications
-- POST application
-- GET application by ID
-- PUT application
-- DELETE application
-- Resume PDF upload
-- PDF file access
-- Resume text extraction
-- Skill detection
-- Resume file deletion
+### 1. Clone the repository
 
-## 📌 Current Project Progress
+```bash
+git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
+```
 
-| Day | Work Completed |
-|---|---|
-| Day 1 | Project setup, Python environment, Flask and PostgreSQL Docker connection |
-| Day 2 | Database models, User model, JobApplication model, Enum and migrations |
-| Day 3 | CRUD APIs, Service Layer, custom exceptions and logging |
-| Day 4 | Resume upload, PDF parsing, skill extraction and file deletion |
+```bash
+cd Job-Application-Tracker
+```
 
-## 🔮 Future Enhancements
+### 2. Create virtual environment
 
-- User authentication and authorization.
-- JWT-based authentication.
-- Multi-user application management.
-- Advanced resume skill extraction.
-- Search and filtering.
-- Dashboard and analytics.
-- Frontend integration.
-- Cloud-based resume storage.
+```bash
+python -m venv .venv
+```
 
-## 👨‍💻 Author
+### 3. Activate virtual environment (Windows PowerShell)
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+### 4. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Start PostgreSQL
+
+Start the configured PostgreSQL Docker container.
+
+Ensure PostgreSQL is accessible through the configured database port.
+
+### 6. Run database migrations
+
+```bash
+flask db upgrade
+```
+
+### 7. Start Flask application
+
+```bash
+python app.py
+```
+
+Application URL:
+
+`http://127.0.0.1:5000`
+
+---
+
+## API Testing
+
+Postman is used to test:
+
+- Application creation
+- Application retrieval
+- Application updates
+- Application deletion
+- Duplicate application validation
+- Invalid company name
+- Future applied date
+- Invalid application status
+- Application not found responses
+
+---
+
+## Error Response Format
+
+All standardized error responses use the following structure:
+
+```json
+{
+    "error": "Error message",
+    "details": {},
+    "status_code": 400
+}
+```
+
+---
+
+## Future Enhancements
+
+- JWT Authentication
+- User authentication and authorization
+- Dashboard and analytics
+- Advanced job application tracking
+- Improved resume skill extraction
+
+---
+
+## Repository
+
+GitHub: https://github.com/Prasanna-20740/Job-Application-Tracker
+
+## Author
 
 **Prasanna**
 
-GitHub: https://github.com/Prasanna-20740
+---
 
-## 📜 License
+## Project Progress
 
-This project is developed for internship training and learning purposes.
+| Day | Description | Status |
+|---|---|---|
+| Day 1 | Project Setup and Database Connection | Completed |
+| Day 2 | Database Models and Migrations | Completed |
+| Day 3 | Service Layer and CRUD Operations | Completed |
+| Day 4 | Marshmallow Validation and Error Handling | Completed |
+| Day 5 | Resume Management | Upcoming in this README version |
