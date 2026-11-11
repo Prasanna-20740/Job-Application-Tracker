@@ -1,164 +1,154 @@
 # Job Application Tracker SaaS
 
-A Flask-based backend application to manage and track job applications. This project provides REST APIs for creating, viewing, updating, and deleting job applications with PostgreSQL database integration, service-layer architecture, request validation, and standardized error handling.
+A Flask-based Job Application Tracker SaaS that helps users manage job applications, track application statuses, upload resumes, and extract skills from PDF resumes.
 
 ## Tech Stack
 
-- Python 3
-- Flask
-- Flask-SQLAlchemy
-- PostgreSQL
-- Docker
-- Flask-Migrate
-- Alembic
-- Marshmallow
-- Postman
+- **Backend:** Python, Flask
+- **Database:** PostgreSQL
+- **ORM:** Flask-SQLAlchemy
+- **Migrations:** Flask-Migrate, Alembic
+- **Validation:** Marshmallow
+- **PDF Processing:** PyPDF2
+- **Testing:** Pytest, Factory Boy, Pytest-Cov
+- **CI/CD:** GitHub Actions
+- **Version Control:** Git & GitHub
 
----
+## Project Progress
 
-## Project Features
-
-### Day 1 – Project Setup and Database Connection
-
+### Day 1 – Project Setup & Architecture
 - Defined the Job Application Tracker SaaS use case.
-- Created and configured Python virtual environment.
+- Created Python virtual environment.
 - Installed Flask and Flask-SQLAlchemy.
 - Configured PostgreSQL using Docker.
-- Connected Flask application with PostgreSQL.
-- Created the initial project structure.
+- Established project folder structure:
+  - `api/`
+  - `models/`
+  - `services/`
+  - `tests/`
 
-### Day 2 – Database Models and Migrations
-
-- Created User model for multi-user support.
+### Day 2 – Database & Models
 - Created JobApplication model.
-- Implemented application fields:
-  - ID
+- Added application fields:
   - Company
   - Role
   - Status
   - Applied Date
   - Notes
-  - User ID
-- Implemented ApplicationStatus Enum:
+- Created ApplicationStatus enum:
   - APPLIED
   - PHONE_SCREEN
   - INTERVIEW
   - OFFER
   - REJECTED
-- Established relationship between User and JobApplication.
-- Configured Flask-Migrate and Alembic.
-- Created and applied database migrations.
+- Created User model for multi-user support.
+- Configured Alembic database migrations.
+- Created initial database migration.
 
-### Day 3 – Service Layer and CRUD Operations
-
-- Implemented Application Service Layer.
-- Separated business logic from API routes.
-- Implemented CRUD operations:
+### Day 3 – REST API Development
+- Implemented Flask REST API endpoints.
+- Added application CRUD operations:
   - Create application
-  - Get all applications
+  - Get applications
   - Get application by ID
   - Update application
   - Delete application
-- Implemented custom exceptions:
+- Added request validation.
+- Implemented structured error handling.
+- Added user management endpoints.
+
+### Day 4 – Resume Upload & PDF Processing
+- Implemented PDF resume upload functionality.
+- Added file type and PDF signature validation.
+- Configured upload size restrictions.
+- Implemented resume storage.
+- Extracted text from PDF resumes using PyPDF2.
+- Added skill extraction functionality.
+- Created resume skills API endpoint.
+
+### Day 5 – Service Layer & Application Logic
+- Implemented ApplicationService.
+- Separated business logic from API routes.
+- Added application creation, retrieval, update, deletion, and listing operations.
+- Implemented duplicate application handling.
+- Added custom exceptions:
   - ApplicationNotFound
   - DuplicateApplication
-- Added logging for application operations.
-- Implemented duplicate application checking.
-- Tested CRUD APIs using Postman.
+- Improved code organization and maintainability.
 
-### Day 4 – Request Validation and Error Handling
+### Day 6 – Pytest Testing & GitHub Actions CI
+- Configured Pytest testing framework.
+- Created reusable test fixtures using `conftest.py`.
+- Integrated Factory Boy for test data generation.
+- Added test coverage for:
+  - Application Service
+  - Application API
+  - File Upload
+  - Helper Functions
+- Configured SQLite database for isolated tests.
+- Added Pytest coverage reporting.
+- Achieved **84% overall test coverage**.
+- Successfully passed **83 tests**.
+- Configured GitHub Actions CI workflow.
+- Automated test execution on push and pull requests.
+- Added `.gitignore` and `.coveragerc`.
+- Successfully verified GitHub Actions CI with a green check.
 
-- Integrated Marshmallow for request data validation.
-- Created ApplicationSchema for validating application data.
-- Implemented company name validation (cannot be empty).
-- Implemented applied date validation (cannot be in the future).
-- Implemented application status validation.
-- Integrated schema validation into POST and PUT APIs.
-- Implemented standardized error response format:
+## Project Structure
 
-```json
-{
-    "error": "Validation failed",
-    "details": {},
-    "status_code": 400
-}
+```text
+Job-Application-Tracker/
+│
+├── .github/
+│   └── workflows/
+│       └── tests.yml
+│
+├── migrations/
+├── models/
+├── schemas/
+├── services/
+├── tests/
+│   ├── conftest.py
+│   ├── factories.py
+│   ├── test_application_api.py
+│   ├── test_application_service.py
+│   ├── test_file_upload.py
+│   └── test_helpers.py
+│
+├── uploads/
+├── app.py
+├── seed.py
+├── docker-compose.yml
+├── requirements.txt
+├── .coveragerc
+├── .gitignore
+└── README.md
 ```
 
-- Implemented Flask error handlers:
-  - 400 – Bad Request
-  - 404 – Resource Not Found
-  - 413 – File Too Large
-  - 500 – Internal Server Error
-- Tested valid and invalid requests using Postman.
+## Running the Project Locally
 
----
-
-## API Endpoints
-
-Base URL: `http://127.0.0.1:5000`
-
-| HTTP Method | Endpoint | Description |
-|---|---|---|
-| POST | `/applications` | Create a new application |
-| GET | `/applications` | Retrieve all applications |
-| GET | `/applications/<application_id>` | Retrieve application by ID |
-| PUT | `/applications/<application_id>` | Update an application |
-| DELETE | `/applications/<application_id>` | Delete an application |
-
----
-
-## Database Structure
-
-**Database:** PostgreSQL
-
-**Tables:**
-
-### users
-
-- id
-- username
-- email
-
-### job_application
-
-- id
-- company
-- role
-- status
-- applied_date
-- notes
-- user_id
-- resume_path
-
-Note: `resume_path` is included in the database model for the resume management functionality developed later.
-
----
-
-## Project Setup
-
-### 1. Clone the repository
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
-```
-
-```bash
 cd Job-Application-Tracker
 ```
 
-### 2. Create virtual environment
+### 2. Create Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-### 3. Activate virtual environment (Windows PowerShell)
+### 3. Activate Virtual Environment
+
+Windows PowerShell:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate.ps1
 ```
 
-### 4. Install dependencies
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -166,84 +156,58 @@ pip install -r requirements.txt
 
 ### 5. Start PostgreSQL
 
-Start the configured PostgreSQL Docker container.
+```bash
+docker compose up -d
+```
 
-Ensure PostgreSQL is accessible through the configured database port.
-
-### 6. Run database migrations
+### 6. Run Database Migrations
 
 ```bash
 flask db upgrade
 ```
 
-### 7. Start Flask application
+### 7. Start Flask Application
 
 ```bash
 python app.py
 ```
 
-Application URL:
+Application URL: `http://127.0.0.1:5000`
 
-`http://127.0.0.1:5000`
+## Running Tests
 
----
+Run all tests:
 
-## API Testing
-
-Postman is used to test:
-
-- Application creation
-- Application retrieval
-- Application updates
-- Application deletion
-- Duplicate application validation
-- Invalid company name
-- Future applied date
-- Invalid application status
-- Application not found responses
-
----
-
-## Error Response Format
-
-All standardized error responses use the following structure:
-
-```json
-{
-    "error": "Error message",
-    "details": {},
-    "status_code": 400
-}
+```bash
+pytest -v
 ```
 
+Run tests with coverage:
+
+```bash
+pytest --cov=app --cov=services --cov-report=term-missing
+```
+
+## Test Results
+
+| Metric | Result |
+|---|---:|
+| Total Tests Passed | 83 |
+| Overall Coverage | 84% |
+| app.py Coverage | 85% |
+| Application Service Coverage | 82% |
+| GitHub Actions CI | Passed |
+
+## GitHub Repository
+
+[Job Application Tracker – GitHub](https://github.com/Prasanna-20740/Job-Application-Tracker)
+
+## Current Status
+
+**Completed:** Day 1 – Day 6
+
+**Next:** Day 7 – Upcoming Development
+
 ---
 
-## Future Enhancements
-
-- JWT Authentication
-- User authentication and authorization
-- Dashboard and analytics
-- Advanced job application tracking
-- Improved resume skill extraction
-
----
-
-## Repository
-
-GitHub: https://github.com/Prasanna-20740/Job-Application-Tracker
-
-## Author
-
-**Prasanna**
-
----
-
-## Project Progress
-
-| Day | Description | Status |
-|---|---|---|
-| Day 1 | Project Setup and Database Connection | Completed |
-| Day 2 | Database Models and Migrations | Completed |
-| Day 3 | Service Layer and CRUD Operations | Completed |
-| Day 4 | Marshmallow Validation and Error Handling | Completed |
-| Day 5 | Resume Management | Upcoming in this README version |
+Developed as a hands-on Python Flask SaaS internship project.
