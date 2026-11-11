@@ -1,0 +1,9 @@
+
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+psycopg2-binary
+PyPDF2
+pytest
+pytest-cov
+factory-boy

@@ -1,0 +1,16 @@
+
+[run]
+source =
+    app
+    services
+
+omit =
+    */tests/*
+    */migrations/*
+    */.venv/*
+    */venv/*
+
+[report]
+show_missing = True
+skip_covered = False
+
