@@ -1,6 +1,6 @@
 # Job Application Tracker SaaS
 
-A Flask-based Job Application Tracker SaaS that helps users manage job applications, track application statuses, upload resumes, and extract skills from PDF resumes.
+A Flask-based Job Application Tracker SaaS that helps users manage job applications, track application statuses, upload resumes, and extract skills from PDF resumes. The application also provides secure JWT-based authentication and automated testing.
 
 ## Tech Stack
 
@@ -10,6 +10,7 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - **Migrations:** Flask-Migrate, Alembic
 - **Validation:** Marshmallow
 - **PDF Processing:** PyPDF2
+- **Authentication:** JWT (JSON Web Tokens)
 - **Testing:** Pytest, Factory Boy, Pytest-Cov
 - **CI/CD:** GitHub Actions
 - **Version Control:** Git & GitHub
@@ -17,6 +18,7 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 ## Project Progress
 
 ### Day 1 – Project Setup & Architecture
+
 - Defined the Job Application Tracker SaaS use case.
 - Created Python virtual environment.
 - Installed Flask and Flask-SQLAlchemy.
@@ -28,6 +30,7 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
   - `tests/`
 
 ### Day 2 – Database & Models
+
 - Created JobApplication model.
 - Added application fields:
   - Company
@@ -46,6 +49,7 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - Created initial database migration.
 
 ### Day 3 – REST API Development
+
 - Implemented Flask REST API endpoints.
 - Added application CRUD operations:
   - Create application
@@ -58,6 +62,7 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - Added user management endpoints.
 
 ### Day 4 – Resume Upload & PDF Processing
+
 - Implemented PDF resume upload functionality.
 - Added file type and PDF signature validation.
 - Configured upload size restrictions.
@@ -67,6 +72,7 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - Created resume skills API endpoint.
 
 ### Day 5 – Service Layer & Application Logic
+
 - Implemented ApplicationService.
 - Separated business logic from API routes.
 - Added application creation, retrieval, update, deletion, and listing operations.
@@ -77,6 +83,7 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - Improved code organization and maintainability.
 
 ### Day 6 – Pytest Testing & GitHub Actions CI
+
 - Configured Pytest testing framework.
 - Created reusable test fixtures using `conftest.py`.
 - Integrated Factory Boy for test data generation.
@@ -94,6 +101,26 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - Added `.gitignore` and `.coveragerc`.
 - Successfully verified GitHub Actions CI with a green check.
 
+### Day 7 – JWT Authentication & Advanced Testing
+
+- Implemented JWT-based authentication.
+- Created a dedicated `auth/` package for authentication routes.
+- Implemented user authentication and token generation.
+- Added JWT token validation.
+- Implemented token blocklist functionality for invalidating revoked tokens.
+- Integrated authentication functionality with the Flask application.
+- Created a new Alembic database migration for JWT authentication and token blocklist support.
+- Added authentication test cases in `tests/test_auth.py`.
+- Expanded application API test coverage.
+- Improved file upload test cases.
+- Updated reusable test fixtures in `tests/conftest.py`.
+- Updated application dependencies in `requirements.txt`.
+- Validated Python code using `py_compile`.
+- Executed automated tests using Pytest.
+- Committed all Day 7 changes to Git.
+- Successfully synchronized local changes with the remote GitHub repository using Git rebase.
+- Successfully pushed Day 7 changes to GitHub.
+
 ## Project Structure
 
 ```text
@@ -103,13 +130,22 @@ Job-Application-Tracker/
 │   └── workflows/
 │       └── tests.yml
 │
+├── api/
+├── auth/
+│   ├── __init__.py
+│   └── routes.py
+│
 ├── migrations/
+│   └── versions/
+│
 ├── models/
 ├── schemas/
 ├── services/
+│
 ├── tests/
 │   ├── conftest.py
 │   ├── factories.py
+│   ├── test_auth.py
 │   ├── test_application_api.py
 │   ├── test_application_service.py
 │   ├── test_file_upload.py
@@ -192,11 +228,14 @@ pytest --cov=app --cov=services --cov-report=term-missing
 
 | Metric | Result |
 |---|---:|
-| Total Tests Passed | 83 |
-| Overall Coverage | 84% |
-| app.py Coverage | 85% |
-| Application Service Coverage | 82% |
+| Total Tests Passed (Day 6) | 83 |
+| Overall Coverage (Day 6) | 84% |
+| app.py Coverage (Day 6) | 85% |
+| Application Service Coverage (Day 6) | 82% |
 | GitHub Actions CI | Passed |
+| Day 7 Authentication Tests | Implemented |
+
+*Day 6 metrics are retained as historical results. Day 7 updated test results should be added after generating a fresh coverage report.*
 
 ## GitHub Repository
 
@@ -204,9 +243,11 @@ pytest --cov=app --cov=services --cov-report=term-missing
 
 ## Current Status
 
-**Completed:** Day 1 – Day 6
+**Completed:** Day 1 – Day 7
 
-**Next:** Day 7 – Upcoming Development
+**Latest Development:** JWT Authentication, Token Blocklist, and Expanded Automated Testing.
+
+**Repository Status:** Day 7 changes successfully pushed to GitHub.
 
 ---
 
