@@ -45,7 +45,6 @@ def test_create_duplicate_user(client):
 
     assert response.status_code == 409
 
-
 def test_get_users(client):
     client.post("/users", json={
         "username": "user1",
@@ -55,9 +54,14 @@ def test_get_users(client):
     response = client.get("/users")
 
     assert response.status_code == 200
-    assert len(response.json) == 1
+    assert len(response.json) == 2
 
+    usernames = [
+        user["username"]
+        for user in response.json
+    ]
 
+    assert "user1" in usernames
 def test_create_application(client):
     response = client.post("/applications", json={
         "company": "Google",

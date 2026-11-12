@@ -9,3 +9,4 @@ pytest-cov
 factory-boy
 marshmallow
 psycopg[binary]
+Flask-JWT-Extended==4.7.4

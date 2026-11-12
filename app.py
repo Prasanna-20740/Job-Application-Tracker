@@ -1,10 +1,25 @@
 
-from datetime import date
+from datetime import date, timedelta, datetime
 from enum import Enum
 import logging
 import os
 import re
 import uuid
+
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    create_refresh_token,
+    jwt_required,
+    get_jwt_identity,
+    get_jwt,
+    decode_token
+)
+
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
 
 from flask import (
     Flask,
@@ -57,6 +72,22 @@ migrate = Migrate(app, db)
 
 
 # --------------------------------------------------
+# JWT Configuration
+# --------------------------------------------------
+
+app.config["JWT_SECRET_KEY"] = os.environ.get(
+    "JWT_SECRET_KEY",
+    "local-development-secret-change-before-production"
+)
+
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
+app.config["JWT_TOKEN_LOCATION"] = ["headers"]
+
+jwt = JWTManager(app)
+
+
+# --------------------------------------------------
 # Application Status Enum
 # --------------------------------------------------
 
@@ -89,6 +120,11 @@ class User(db.Model):
         nullable=False
     )
 
+    password_hash = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
     applications = db.relationship(
         "JobApplication",
         backref="user",
@@ -102,6 +138,29 @@ class User(db.Model):
             "email": self.email
         }
 
+# --------------------------------------------------
+# Token Blocklist Model
+# --------------------------------------------------
+
+class TokenBlocklist(db.Model):
+    __tablename__ = "token_blocklist"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    jti = db.Column(
+        db.String(36),
+        unique=True,
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
 
 # --------------------------------------------------
 # Job Application Model
@@ -167,7 +226,20 @@ class JobApplication(db.Model):
             "user_id": self.user_id,
             "resume_path": self.resume_path
         }
+    
+# --------------------------------------------------
+# JWT Token Blocklist Callback
+# --------------------------------------------------
 
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload["jti"]
+
+    token = db.session.query(TokenBlocklist.id).filter_by(
+        jti=jti
+    ).scalar()
+
+    return token is not None
 
 # --------------------------------------------------
 # Helper Functions
@@ -384,12 +456,185 @@ def home():
         "message": "Job Application Tracker API is running"
     }), 200
 
+# --------------------------------------------------
+# JWT Authentication APIs
+# --------------------------------------------------
 
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "error": "Request body is required"
+        }), 400
+
+    username = data.get("username")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not username or not email or not password:
+        return jsonify({
+            "error": "Username, email and password are required"
+        }), 400
+
+    if len(password) < 8:
+        return jsonify({
+            "error": "Password must be at least 8 characters"
+        }), 400
+
+    existing_user = User.query.filter(
+        (User.username == username) |
+        (User.email == email)
+    ).first()
+
+    if existing_user:
+        return jsonify({
+            "error": "Username or email already exists"
+        }), 409
+
+    user = User(
+        username=username,
+        email=email,
+        password_hash=generate_password_hash(password)
+    )
+
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({
+        "message": "User registered successfully",
+        "user": user.to_dict()
+    }), 201
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "error": "Request body is required"
+        }), 400
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({
+            "error": "Email and password are required"
+        }), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user or not user.password_hash:
+        return jsonify({
+            "error": "Invalid email or password"
+        }), 401
+
+    if not check_password_hash(user.password_hash, password):
+        return jsonify({
+            "error": "Invalid email or password"
+        }), 401
+
+    access_token = create_access_token(
+        identity=str(user.id)
+    )
+
+    refresh_token = create_refresh_token(
+        identity=str(user.id)
+    )
+
+    return jsonify({
+        "message": "Login successful",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": user.to_dict()
+    }), 200
+
+@app.route("/api/auth/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+
+    current_user_id = get_jwt_identity()
+
+    new_access_token = create_access_token(
+        identity=current_user_id
+    )
+
+    return jsonify({
+        "message": "Access token refreshed successfully",
+        "access_token": new_access_token
+    }), 200
+
+@app.route("/api/auth/logout", methods=["POST"])
+@jwt_required()
+def logout():
+
+    try:
+        current_user_id = str(get_jwt_identity())
+
+        # Revoke access token
+        access_jti = get_jwt()["jti"]
+
+        access_blocked = TokenBlocklist.query.filter_by(
+            jti=access_jti
+        ).first()
+
+        if access_blocked is None:
+            db.session.add(
+                TokenBlocklist(jti=access_jti)
+            )
+
+        db.session.commit()
+
+        # Revoke refresh token if supplied
+        data = request.get_json(silent=True) or {}
+        refresh_token = data.get("refresh_token")
+
+        if refresh_token:
+            refresh_payload = decode_token(refresh_token)
+
+            if (
+                refresh_payload.get("type") != "refresh"
+                or refresh_payload.get("sub") != current_user_id
+            ):
+                return jsonify({
+                    "error": "Invalid refresh token"
+                }), 400
+
+            refresh_jti = refresh_payload["jti"]
+
+            refresh_blocked = TokenBlocklist.query.filter_by(
+                jti=refresh_jti
+            ).first()
+
+            if refresh_blocked is None:
+                db.session.add(
+                    TokenBlocklist(jti=refresh_jti)
+                )
+
+                db.session.commit()
+
+        return jsonify({
+            "message": "Logout successful. Access and refresh tokens revoked."
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        logger.exception("Error during logout")
+
+        return jsonify({
+            "error": "Logout failed"
+        }), 500
 # --------------------------------------------------
 # Create User API
 # --------------------------------------------------
 
 @app.route("/users", methods=["POST"])
+@jwt_required()
 def create_user():
 
     data = request.get_json(silent=True)
@@ -455,6 +700,7 @@ def create_user():
 # --------------------------------------------------
 
 @app.route("/users", methods=["GET"])
+@jwt_required()
 def get_users():
 
     users = User.query.order_by(User.id).all()
@@ -469,12 +715,16 @@ def get_users():
 # --------------------------------------------------
 # Get All Applications API
 # --------------------------------------------------
-
 @app.route("/applications", methods=["GET"])
+@jwt_required()
 def get_applications():
 
     try:
-        applications = application_service.list_applications()
+        current_user_id = int(get_jwt_identity())
+
+        applications = JobApplication.query.filter_by(
+            user_id=current_user_id
+        ).order_by(JobApplication.id).all()
 
         return jsonify([
             application.to_dict()
@@ -490,12 +740,12 @@ def get_applications():
             "status_code": 500
         }), 500
 
-
 # --------------------------------------------------
 # Create Application API
 # --------------------------------------------------
 
 @app.route("/applications", methods=["POST"])
+@jwt_required()
 def create_application():
 
     data = request.get_json(silent=True)
@@ -503,14 +753,16 @@ def create_application():
     try:
         parsed = ApplicationSchema().load(data or {})
 
+        current_user_id = int(get_jwt_identity())
+
         application = application_service.create_application(
-            company=parsed["company"],
-            role=parsed["role"],
-            status=parsed.get("status", "APPLIED"),
-            notes=parsed.get("notes"),
-            applied_date=parsed.get("applied_date"),
-            user_id=parsed.get("user_id")
-        )
+              company=parsed["company"],
+              role=parsed["role"],
+              status=parsed.get("status", "APPLIED"),
+              notes=parsed.get("notes"),
+              applied_date=parsed.get("applied_date"),
+              user_id=current_user_id
+         )
 
         return jsonify({
             "message": "Application created successfully",
@@ -544,23 +796,26 @@ def create_application():
 # --------------------------------------------------
 # Get Application By ID API
 # --------------------------------------------------
-
 @app.route("/applications/<int:application_id>", methods=["GET"])
+@jwt_required()
 def get_application(application_id):
 
     try:
-        application = application_service.get_application(
-            application_id
-        )
+        current_user_id = int(get_jwt_identity())
+
+        application = JobApplication.query.filter_by(
+            id=application_id,
+            user_id=current_user_id
+        ).first()
+
+        if application is None:
+            return jsonify({
+                "error": "Application not found",
+                "details": {},
+                "status_code": 404
+            }), 404
 
         return jsonify(application.to_dict()), 200
-
-    except ApplicationNotFound as error:
-        return jsonify({
-            "error": str(error),
-            "details": {},
-            "status_code": 404
-        }), 404
 
     except Exception:
         logger.exception("Error retrieving application")
@@ -577,6 +832,7 @@ def get_application(application_id):
 # --------------------------------------------------
 
 @app.route("/applications/<int:application_id>", methods=["PUT"])
+@jwt_required()
 def update_application(application_id):
 
     data = request.get_json(silent=True)
@@ -606,6 +862,22 @@ def update_application(application_id):
                 "details": {},
                 "status_code": 400
             }), 400
+        current_user_id = int(get_jwt_identity())
+
+        owned_application = JobApplication.query.filter_by(
+            id=application_id,
+            user_id=current_user_id
+        ).first()
+
+        if owned_application is None:
+            return jsonify({
+                "error": "Application not found",
+                "details": {},
+                "status_code": 404
+            }), 404
+
+        # Prevent changing application ownership
+        parsed.pop("user_id", None)
 
         application = application_service.update_application(
             application_id,
@@ -658,14 +930,24 @@ def update_application(application_id):
 # --------------------------------------------------
 # Delete Application API
 # --------------------------------------------------
-
 @app.route("/applications/<int:application_id>", methods=["DELETE"])
+@jwt_required()
 def delete_application(application_id):
 
     try:
-        application = application_service.get_application(
-            application_id
-        )
+        current_user_id = int(get_jwt_identity())
+
+        application = JobApplication.query.filter_by(
+            id=application_id,
+            user_id=current_user_id
+        ).first()
+
+        if application is None:
+            return jsonify({
+                "error": "Application not found",
+                "details": {},
+                "status_code": 404
+            }), 404
 
         resume_path = application.resume_path
 
@@ -680,13 +962,6 @@ def delete_application(application_id):
             "application": deleted_application.to_dict()
         }), 200
 
-    except ApplicationNotFound as error:
-        return jsonify({
-            "error": str(error),
-            "details": {},
-            "status_code": 404
-        }), 404
-
     except Exception:
         logger.exception("Error deleting application")
 
@@ -695,8 +970,6 @@ def delete_application(application_id):
             "details": {},
             "status_code": 500
         }), 500
-
-
 # --------------------------------------------------
 # Upload Resume API
 # --------------------------------------------------
@@ -705,12 +978,23 @@ def delete_application(application_id):
     "/applications/<int:application_id>/resume",
     methods=["POST"]
 )
+@jwt_required()
 def upload_resume(application_id):
 
     try:
-        application = application_service.get_application(
-            application_id
-        )
+        current_user_id = int(get_jwt_identity())
+
+        application = JobApplication.query.filter_by(
+            id=application_id,
+            user_id=current_user_id
+        ).first()
+
+        if application is None:
+            return jsonify({
+                "error": "Application not found",
+                "details": {},
+                "status_code": 404
+            }), 404
 
         if "resume" not in request.files:
             return jsonify({
@@ -804,11 +1088,25 @@ def upload_resume(application_id):
 # --------------------------------------------------
 # Serve Uploaded Resume API
 # --------------------------------------------------
-
 @app.route("/files/<path:filename>", methods=["GET"])
+@jwt_required()
 def serve_resume(filename):
 
     try:
+        current_user_id = int(get_jwt_identity())
+
+        application = JobApplication.query.filter_by(
+            resume_path=filename,
+            user_id=current_user_id
+        ).first()
+
+        if application is None:
+            return jsonify({
+                "error": "Resume file not found",
+                "details": {},
+                "status_code": 404
+            }), 404
+
         return send_from_directory(
             app.root_path,
             filename,
@@ -824,7 +1122,6 @@ def serve_resume(filename):
             "status_code": 404
         }), 404
 
-
 # --------------------------------------------------
 # Extract Resume Skills API
 # --------------------------------------------------
@@ -833,12 +1130,23 @@ def serve_resume(filename):
     "/applications/<int:application_id>/resume/skills",
     methods=["GET"]
 )
+@jwt_required()
 def get_resume_skills(application_id):
 
     try:
-        application = application_service.get_application(
-            application_id
-        )
+        current_user_id = int(get_jwt_identity())
+
+        application = JobApplication.query.filter_by(
+            id=application_id,
+            user_id=current_user_id
+        ).first()
+
+        if application is None:
+            return jsonify({
+                "error": "Application not found",
+                "details": {},
+                "status_code": 404
+            }), 404
 
         if not application.resume_path:
             return jsonify({

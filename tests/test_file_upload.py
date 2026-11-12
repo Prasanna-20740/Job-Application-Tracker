@@ -179,7 +179,7 @@ def test_serve_resume_not_found(client):
 
 
 def test_get_resume_skills_success(
-    app, client, db, factories, tmp_path, monkeypatch
+    app, client, db, factories, auth_user, tmp_path, monkeypatch
 ):
     # Temporary upload folder
     app.config["UPLOAD_FOLDER"] = str(tmp_path)
@@ -188,8 +188,11 @@ def test_get_resume_skills_success(
     resume_file = tmp_path / "resume.pdf"
     resume_file.write_bytes(b"dummy pdf content")
 
-    # Create application
-    application = factories["application"].create()
+    # Create application for authenticated user
+    application = factories["application"].create(
+        user=auth_user
+    )
+
     application.resume_path = "uploads/resume.pdf"
     db.session.commit()
 
