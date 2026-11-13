@@ -1,6 +1,8 @@
 # Job Application Tracker SaaS
 
-A Flask-based Job Application Tracker SaaS that helps users manage job applications, track application statuses, upload resumes, and extract skills from PDF resumes. The application also provides secure JWT-based authentication and automated testing.
+A Flask-based Job Application Tracker SaaS that helps users manage job applications, track application statuses, upload resumes, and extract skills from PDF resumes.
+
+The application includes secure JWT-based authentication, RESTful APIs, database migrations, automated testing, API documentation, and continuous integration using GitHub Actions.
 
 ## Tech Stack
 
@@ -8,12 +10,17 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - **Database:** PostgreSQL
 - **ORM:** Flask-SQLAlchemy
 - **Migrations:** Flask-Migrate, Alembic
-- **Validation:** Marshmallow
+- **Validation:** Marshmallow, Pydantic
+- **API Documentation:** Flask-OpenAPI3, Swagger UI
 - **PDF Processing:** PyPDF2
 - **Authentication:** JWT (JSON Web Tokens)
 - **Testing:** Pytest, Factory Boy, Pytest-Cov
 - **CI/CD:** GitHub Actions
 - **Version Control:** Git & GitHub
+- **API Testing:** Postman
+- **Containerization:** Docker
+
+---
 
 ## Project Progress
 
@@ -118,8 +125,33 @@ A Flask-based Job Application Tracker SaaS that helps users manage job applicati
 - Validated Python code using `py_compile`.
 - Executed automated tests using Pytest.
 - Committed all Day 7 changes to Git.
-- Successfully synchronized local changes with the remote GitHub repository using Git rebase.
 - Successfully pushed Day 7 changes to GitHub.
+
+### Day 8 – REST API Enhancement, Pagination & Swagger Documentation
+
+- Implemented and enhanced REST API endpoints using Flask-OpenAPI3.
+- Added complete Job Application CRUD operations:
+  - `GET /applications` – Retrieve applications.
+  - `POST /applications` – Create a new application.
+  - `GET /applications/{application_id}` – Retrieve an application by ID.
+  - `PATCH /applications/{application_id}` – Update an application.
+  - `DELETE /applications/{application_id}` – Delete an application.
+- Implemented pagination for application listing.
+- Added filtering applications by status.
+- Implemented application statistics API:
+  - `GET /applications/stats`
+- Added Pydantic-based request and path validation.
+- Integrated Swagger UI for interactive API documentation.
+- Tested all six API endpoints using Postman.
+- Exported Postman collection to `postman/Job-Application-Tracker.postman_collection.json`.
+- Updated API test cases to support Flask-OpenAPI3 validation.
+- Successfully executed the complete Pytest suite.
+- Achieved **92 passed tests**.
+- Committed Day 8 changes to Git.
+- Successfully synchronized local and remote Git branches using Git rebase.
+- Successfully pushed Day 8 changes to GitHub.
+
+---
 
 ## Project Structure
 
@@ -131,6 +163,7 @@ Job-Application-Tracker/
 │       └── tests.yml
 │
 ├── api/
+│
 ├── auth/
 │   ├── __init__.py
 │   └── routes.py
@@ -151,6 +184,9 @@ Job-Application-Tracker/
 │   ├── test_file_upload.py
 │   └── test_helpers.py
 │
+├── postman/
+│   └── Job-Application-Tracker.postman_collection.json
+│
 ├── uploads/
 ├── app.py
 ├── seed.py
@@ -160,6 +196,18 @@ Job-Application-Tracker/
 ├── .gitignore
 └── README.md
 ```
+
+## API Documentation
+
+The project uses Swagger UI to provide interactive API documentation.
+
+**Swagger URL:**
+
+```text
+http://127.0.0.1:5000/openapi/swagger
+```
+
+You can explore and test the available API endpoints directly through Swagger UI.
 
 ## Running the Project Locally
 
@@ -208,7 +256,17 @@ flask db upgrade
 python app.py
 ```
 
-Application URL: `http://127.0.0.1:5000`
+**Application URL:**
+
+```text
+http://127.0.0.1:5000
+```
+
+**Swagger Documentation:**
+
+```text
+http://127.0.0.1:5000/openapi/swagger
+```
 
 ## Running Tests
 
@@ -228,27 +286,39 @@ pytest --cov=app --cov=services --cov-report=term-missing
 
 | Metric | Result |
 |---|---:|
-| Total Tests Passed (Day 6) | 83 |
-| Overall Coverage (Day 6) | 84% |
-| app.py Coverage (Day 6) | 85% |
-| Application Service Coverage (Day 6) | 82% |
-| GitHub Actions CI | Passed |
-| Day 7 Authentication Tests | Implemented |
+| Day 6 Tests Passed | 83 |
+| Day 6 Overall Coverage | 84% |
+| Day 6 GitHub Actions CI | Passed |
+| Day 7 JWT Authentication | Implemented |
+| Day 8 REST API Endpoints | 6 |
+| Day 8 Pytest Results | **92 Passed** |
+| Day 8 Swagger Documentation | Completed |
+| Day 8 Postman Testing | Completed |
 
-*Day 6 metrics are retained as historical results. Day 7 updated test results should be added after generating a fresh coverage report.*
+*Day 6 coverage metrics are historical results. Day 8 test count reflects the latest successful Pytest execution.*
 
 ## GitHub Repository
 
 [Job Application Tracker – GitHub](https://github.com/Prasanna-20740/Job-Application-Tracker)
 
-## Current Status
+## Current Project Status
 
-**Completed:** Day 1 – Day 7
+**Completed:** Day 1 – Day 8
 
-**Latest Development:** JWT Authentication, Token Blocklist, and Expanded Automated Testing.
+**Latest Development:**
+- JWT Authentication and Token Blocklist
+- RESTful CRUD API Development
+- Pagination and Status Filtering
+- Application Statistics API
+- Swagger API Documentation
+- Postman API Testing
+- Automated Testing with Pytest
+- GitHub Actions CI Integration
 
-**Repository Status:** Day 7 changes successfully pushed to GitHub.
+**Latest Test Result:** 92 Passed
+
+**Repository Status:** Day 8 changes successfully committed and pushed to GitHub.
 
 ---
 
-Developed as a hands-on Python Flask SaaS internship project.
+Developed as a internship project.
