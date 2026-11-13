@@ -22,11 +22,13 @@ from werkzeug.security import (
 )
 
 from flask import (
-    Flask,
     jsonify,
     request,
     send_from_directory
 )
+
+from flask_openapi3 import OpenAPI, Info
+from pydantic import BaseModel, Field
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -51,7 +53,24 @@ logger = logging.getLogger(__name__)
 # Flask Configuration
 # --------------------------------------------------
 
-app = Flask(__name__)
+app = OpenAPI(
+    __name__,
+    info=Info(
+        title="Job Application Tracker API",
+        version="1.0.0",
+        description="REST API for managing job applications"
+    ),
+    security_schemes={
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+)
+
+security = [{"BearerAuth": []}]
+
 
 app.config["UPLOAD_FOLDER"] = os.path.join(
     app.root_path, "uploads"
@@ -629,6 +648,26 @@ def logout():
         return jsonify({
             "error": "Logout failed"
         }), 500
+
+class ApplicationQuery(BaseModel):
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=10, ge=1, le=100)
+    status: str | None = None
+    
+class ApplicationPath(BaseModel):
+    application_id: int = Field(gt=0)
+    page: int = Field(default=1, ge=1)
+    per_page: int = Field(default=10, ge=1, le=100)
+    status: str | None = None
+
+
+class ApplicationCreate(BaseModel):
+    company: str
+    role: str
+    status: str = "APPLIED"
+    applied_date: date | None = None
+    notes: str | None = None
+    
 # --------------------------------------------------
 # Create User API
 # --------------------------------------------------
@@ -712,24 +751,92 @@ def get_users():
     ]), 200
 
 
+
 # --------------------------------------------------
-# Get All Applications API
+# Get All Applications API (Paginated + Filterable)
 # --------------------------------------------------
-@app.route("/applications", methods=["GET"])
+
+@app.get(
+    "/applications",
+    summary="Get all applications",
+    description="Get paginated and filterable applications for the logged-in user",
+    security=security
+)
 @jwt_required()
-def get_applications():
+def get_applications(query: ApplicationQuery):
 
     try:
         current_user_id = int(get_jwt_identity())
 
-        applications = JobApplication.query.filter_by(
-            user_id=current_user_id
-        ).order_by(JobApplication.id).all()
+        # Pagination parameters
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 10, type=int)
 
-        return jsonify([
-            application.to_dict()
-            for application in applications
-        ]), 200
+        if page < 1 or per_page < 1 or per_page > 100:
+            return jsonify({
+                "error": "Invalid pagination parameters",
+                "details": {
+                    "page": "Must be at least 1",
+                    "per_page": "Must be between 1 and 100"
+                },
+                "status_code": 400
+            }), 400
+
+        # Base query: only current user's applications
+        query = JobApplication.query.filter_by(
+            user_id=current_user_id
+        )
+
+        # Optional status filter
+        status_filter = request.args.get("status")
+
+        if status_filter:
+            try:
+                status_enum = ApplicationStatus(status_filter.upper())
+            except ValueError:
+                return jsonify({
+                    "error": "Invalid application status",
+                    "valid_statuses": [
+                        status.value for status in ApplicationStatus
+                    ],
+                    "status_code": 400
+                }), 400
+
+            query = query.filter(
+                JobApplication.status == status_enum
+            )
+
+        # Apply pagination
+        pagination = query.order_by(
+            JobApplication.id
+        ).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+
+        response = jsonify({
+            "applications": [
+                application.to_dict()
+                for application in pagination.items
+            ],
+            "pagination": {
+                "page": pagination.page,
+                "per_page": pagination.per_page,
+                "total": pagination.total,
+                "total_pages": pagination.pages,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev
+            }
+        })
+
+        # Pagination headers
+        response.headers["X-Total-Count"] = str(pagination.total)
+        response.headers["X-Page"] = str(pagination.page)
+        response.headers["X-Per-Page"] = str(pagination.per_page)
+        response.headers["X-Total-Pages"] = str(pagination.pages)
+
+        return response, 200
 
     except Exception:
         logger.exception("Error retrieving applications")
@@ -744,9 +851,14 @@ def get_applications():
 # Create Application API
 # --------------------------------------------------
 
-@app.route("/applications", methods=["POST"])
+@app.post(
+    "/applications",
+    summary="Create application",
+    description="Create a new job application for the logged-in user",
+    security=security
+)
 @jwt_required()
-def create_application():
+def create_application(body: ApplicationCreate):
 
     data = request.get_json(silent=True)
 
@@ -793,12 +905,54 @@ def create_application():
         }), 500
 
 
+
+# NEW STATS API
+@app.get(
+    "/applications/stats",
+    summary="Get application statistics",
+    description="Get application counts grouped by status for the logged-in user",
+    security=security
+)
+@jwt_required()
+def application_stats():
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        counts = {
+            status.value: JobApplication.query.filter_by(
+                user_id=current_user_id,
+                status=status
+            ).count()
+            for status in ApplicationStatus
+        }
+
+        return jsonify({
+            "total_applications": sum(counts.values()),
+            "status_counts": counts
+        }), 200
+
+    except Exception:
+        logger.exception("Error retrieving application stats")
+        return jsonify({
+            "error": "Internal server error",
+            "details": {},
+            "status_code": 500
+        }), 500
+
+
+
 # --------------------------------------------------
 # Get Application By ID API
 # --------------------------------------------------
-@app.route("/applications/<int:application_id>", methods=["GET"])
+@app.get(
+    "/applications/<int:application_id>",
+    summary="Get application by ID",
+    description="Get a specific job application belonging to the logged-in user",
+    security=security
+)
 @jwt_required()
-def get_application(application_id):
+def get_application(path: ApplicationPath):
+    application_id = path.application_id
 
     try:
         current_user_id = int(get_jwt_identity())
@@ -830,10 +984,15 @@ def get_application(application_id):
 # --------------------------------------------------
 # Update Application API
 # --------------------------------------------------
-
-@app.route("/applications/<int:application_id>", methods=["PUT"])
+@app.patch(
+    "/applications/<int:application_id>",
+    summary="Update application",
+    description="Partially update a job application belonging to the logged-in user",
+    security=security
+)
 @jwt_required()
-def update_application(application_id):
+def update_application(path: ApplicationPath):
+    application_id = path.application_id
 
     data = request.get_json(silent=True)
 
@@ -930,17 +1089,43 @@ def update_application(application_id):
 # --------------------------------------------------
 # Delete Application API
 # --------------------------------------------------
-@app.route("/applications/<int:application_id>", methods=["DELETE"])
+@app.delete(
+    "/applications/<int:application_id>",
+    summary="Delete application",
+    description="Delete a job application belonging to the logged-in user",
+    security=security
+)
 @jwt_required()
-def delete_application(application_id):
-
+def delete_application(path: ApplicationPath):
+    application_id = path.application_id
+    
     try:
         current_user_id = int(get_jwt_identity())
+
+        print("DEBUG DELETE FUNCTION CALLED")
+        print("DEBUG application_id:", application_id)
+        print("DEBUG current_user_id:", current_user_id)
+
+        # Find application belonging to current user
+        application_by_id = JobApplication.query.filter_by(
+              id=application_id
+        ).first()
+
+        print("DEBUG application by ID:", application_by_id)
+
+        if application_by_id:
+           print("DEBUG DB application ID:", application_by_id.id)
+           print("DEBUG DB user ID:", application_by_id.user_id)
+           print("DEBUG DB company:", application_by_id.company)
 
         application = JobApplication.query.filter_by(
             id=application_id,
             user_id=current_user_id
         ).first()
+
+        print("DEBUG ownership query result:", application)
+
+        print("DEBUG application found:", application is not None)
 
         if application is None:
             return jsonify({
@@ -951,10 +1136,12 @@ def delete_application(application_id):
 
         resume_path = application.resume_path
 
+        # Delete application
         deleted_application = application_service.delete_application(
             application_id
         )
 
+        # Delete associated resume file
         delete_resume_file(resume_path)
 
         return jsonify({
@@ -962,7 +1149,15 @@ def delete_application(application_id):
             "application": deleted_application.to_dict()
         }), 200
 
+    except ApplicationNotFound as error:
+        return jsonify({
+            "error": str(error),
+            "details": {},
+            "status_code": 404
+        }), 404
+
     except Exception:
+        db.session.rollback()
         logger.exception("Error deleting application")
 
         return jsonify({
@@ -970,6 +1165,7 @@ def delete_application(application_id):
             "details": {},
             "status_code": 500
         }), 500
+
 # --------------------------------------------------
 # Upload Resume API
 # --------------------------------------------------
@@ -983,7 +1179,7 @@ def upload_resume(application_id):
 
     try:
         current_user_id = int(get_jwt_identity())
-
+        
         application = JobApplication.query.filter_by(
             id=application_id,
             user_id=current_user_id
