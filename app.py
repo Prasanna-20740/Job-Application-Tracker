@@ -6,6 +6,13 @@ import os
 import re
 import uuid
 
+from dotenv import load_dotenv
+from flask_caching import Cache
+from services.job_search_service import job_search_service
+from schemas.job_suggestion import JobSuggestion
+
+load_dotenv()
+
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
@@ -72,12 +79,26 @@ app = OpenAPI(
 security = [{"BearerAuth": []}]
 
 
+# Redis Cache Configuration
+app.config["CACHE_TYPE"] = "RedisCache"
+app.config["CACHE_REDIS_URL"] = os.getenv(
+    "REDIS_URL",
+    "redis://localhost:6379/0"
+)
+app.config["CACHE_DEFAULT_TIMEOUT"] = 1800
+
+cache = Cache(app)
+
+
+# Upload Configuration
 app.config["UPLOAD_FOLDER"] = os.path.join(
     app.root_path, "uploads"
 )
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
+
+# Database Configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "postgresql://postgres:postgres123@localhost:5434/job_tracker"
 )
@@ -1439,6 +1460,65 @@ def internal_server_error(error):
         "details": {},
         "status_code": 500
     }), 500
+
+
+# Job Search Query Schema
+class JobSearchQuery(BaseModel):
+    q: str = Field(..., min_length=1, description="Job keyword")
+    location: str = Field(..., min_length=1, description="Job location")
+
+
+# External Job Search API
+@app.get("/api/jobs/search")
+def search_external_jobs(query: JobSearchQuery):
+
+    keyword = query.q.strip()
+    location = query.location.strip()
+
+    cache_key = f"jobs:{keyword.lower()}:{location.lower()}"
+
+    # Check Redis cache
+    cached_jobs = cache.get(cache_key)
+
+    if cached_jobs is not None:
+        logger.info("Job search cache HIT: %s", cache_key)
+        return jsonify({
+            "source": "cache",
+            "count": len(cached_jobs),
+            "results": cached_jobs
+        }), 200
+
+    logger.info("Job search cache MISS: %s", cache_key)
+
+    try:
+        jobs = job_search_service.search_jobs(
+            keyword=keyword,
+            location=location,
+            results_per_page=5
+        )
+
+        # Validate results using JobSuggestion DTO
+        validated_jobs = [
+            JobSuggestion(**job).model_dump()
+            for job in jobs
+        ]
+
+        # Store results in Redis for 30 minutes
+        cache.set(cache_key, validated_jobs, timeout=1800)
+
+        return jsonify({
+            "source": "adzuna_api",
+            "count": len(validated_jobs),
+            "results": validated_jobs
+        }), 200
+
+    except RuntimeError:
+        logger.exception("Job search configuration error")
+        return jsonify({"error": "Job search API is not configured"}), 503
+
+    except Exception:
+        logger.exception("External job search failed")
+        return jsonify({"error": "Unable to search jobs at the moment"}), 502
 
 
 # --------------------------------------------------
