@@ -742,6 +742,67 @@ pytest tests/test_auth.py -v
 
 *Day 6 coverage metrics are historical. The Day 9 result represents the latest successful test execution.*
 
+
+
+## Day 10 – Email Notifications and Interview Reminders
+
+### Features Implemented
+
+- Integrated Flask-Mail for SMTP email delivery.
+- Configured Mailtrap Email Sandbox for testing.
+- Created responsive HTML email templates using Jinja2.
+- Implemented weekly job application digest emails.
+- Added interview scheduling using an Interview database model.
+- Implemented interview reminder emails approximately 24 hours before interviews.
+- Integrated APScheduler for background scheduling.
+
+### Email Notifications
+
+**1. Weekly Job Application Digest**
+- Retrieves applications updated during the last 7 days.
+- Sends a summary email to registered users.
+- Displays company, role, and application status.
+- Scheduled every Monday at 9:00 AM.
+
+**2. Interview Reminder**
+- Checks upcoming interviews every 5 minutes.
+- Sends reminders approximately 24 hours before interviews.
+- Prevents duplicate reminders using the `reminder_sent` field.
+- Includes company, role, interview date, and time.
+
+### Technologies Used
+
+- Flask-Mail
+- Mailtrap SMTP
+- Jinja2 HTML Templates
+- APScheduler
+- PostgreSQL
+- Flask-SQLAlchemy
+
+### Testing Results
+
+- Weekly digest email successfully delivered to Mailtrap.
+- Interview reminder email successfully delivered to Mailtrap.
+- HTML templates and dynamic values verified.
+- Pytest: 92 passed.
+
+### Environment Variables
+
+Configure the following variables in your `.env` file:
+
+```env
+MAIL_SERVER=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your_mailtrap_username
+MAIL_PASSWORD=your_mailtrap_password
+MAIL_USE_TLS=True
+MAIL_USE_SSL=False
+MAIL_DEFAULT_SENDER=testing@example.com
+```
+
+Never commit your `.env` file or expose SMTP credentials.
+
+
 ---
 
 # GitHub Repository

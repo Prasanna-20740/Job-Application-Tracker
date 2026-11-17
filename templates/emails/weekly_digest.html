@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Job Application Digest</title>
+</head>
+<body style="margin:0; padding:20px; background:#f4f6f9; font-family:Arial,sans-serif;">
+
+    <div style="max-width:600px; margin:auto; background:#ffffff; padding:25px; border-radius:10px;">
+
+        <h2 style="color:#2563eb;">Your Weekly Job Application Digest</h2>
+
+        <p>Hello {{ username }},</p>
+
+        <p>Here is your job application activity for this week.</p>
+
+        <div style="background:#eff6ff; padding:15px; border-radius:8px;">
+            <h3>Total Applications Updated</h3>
+            <h1 style="color:#2563eb;">{{ total_applications }}</h1>
+        </div>
+
+        <h3>Application Details</h3>
+
+        {% if applications %}
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#e5e7eb;">
+                        <th style="padding:10px; text-align:left;">Company</th>
+                        <th style="padding:10px; text-align:left;">Role</th>
+                        <th style="padding:10px; text-align:left;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in applications %}
+                    <tr>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">
+                            {{ application.company }}
+                        </td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">
+                            {{ application.role }}
+                        </td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">
+                            {{ application.status.value if application.status.value is defined else application.status }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No applications were updated this week.</p>
+        {% endif %}
+
+        <p style="margin-top:25px;">
+            Keep tracking your job search progress!
+        </p>
+
+        <hr style="border:none; border-top:1px solid #ddd;">
+
+        <p style="color:#888; font-size:12px;">
+            This is an automated weekly digest from Job Application Tracker.
+        </p>
+
+    </div>
+</body>
+</html>

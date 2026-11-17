@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from flask_caching import Cache
 from services.job_search_service import job_search_service
 from schemas.job_suggestion import JobSuggestion
+from flask_mail import Mail, Message
 
 load_dotenv()
 
@@ -104,6 +105,20 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 )
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Email Configuration - Mailtrap SMTP
+
+app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
+app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", 2525))
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
+app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "True").lower() == "true"
+app.config["MAIL_USE_SSL"] = os.getenv("MAIL_USE_SSL", "False").lower() == "true"
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv(
+    "MAIL_DEFAULT_SENDER",
+    "testing@example.com"
+)
+
+mail = Mail(app)
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
@@ -252,6 +267,19 @@ class JobApplication(db.Model):
         nullable=True
     )
 
+    created_at = db.Column(
+    db.DateTime,
+    nullable=False,
+    default=datetime.utcnow
+    )
+
+    updated_at = db.Column(
+    db.DateTime,
+    nullable=False,
+    default=datetime.utcnow,
+    onupdate=datetime.utcnow
+    )
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -266,7 +294,53 @@ class JobApplication(db.Model):
             "user_id": self.user_id,
             "resume_path": self.resume_path
         }
-    
+
+# --------------------------------------------------
+# Interview Model
+# --------------------------------------------------
+
+class Interview(db.Model):
+    __tablename__ = "interviews"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    application_id = db.Column(
+        db.Integer,
+        db.ForeignKey("job_application.id"),
+        nullable=False
+    )
+
+    interview_date = db.Column(
+        db.DateTime,
+        nullable=False
+    )
+
+    interview_type = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
+    meeting_link = db.Column(
+        db.String(500),
+        nullable=True
+    )
+
+    notes = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    reminder_sent = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False
+    )
+
+    application = db.relationship(
+        "JobApplication",
+        backref=db.backref("interviews", lazy=True)
+    )
+ 
 # --------------------------------------------------
 # JWT Token Blocklist Callback
 # --------------------------------------------------
@@ -1520,10 +1594,15 @@ def search_external_jobs(query: JobSearchQuery):
         logger.exception("External job search failed")
         return jsonify({"error": "Unable to search jobs at the moment"}), 502
 
-
 # --------------------------------------------------
 # Run Flask Application
 # --------------------------------------------------
 
 if __name__ == "__main__":
+
+    from services.scheduler_service import start_scheduler
+
+    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        start_scheduler(app)
+
     app.run(debug=True)

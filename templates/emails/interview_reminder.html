@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interview Reminder</title>
+</head>
+<body style="margin:0; padding:20px; background:#f4f6f9; font-family:Arial,sans-serif;">
+
+    <div style="max-width:600px; margin:auto; background:#ffffff; padding:25px; border-radius:10px;">
+
+        <h2 style="color:#2563eb;">Upcoming Interview Reminder</h2>
+
+        <p>Hello {{ username }},</p>
+
+        <p>This is a reminder that you have an upcoming interview in approximately 24 hours.</p>
+
+        <div style="background:#eff6ff; padding:20px; border-radius:8px;">
+            <h3 style="margin-top:0;">Interview Details</h3>
+
+            <p><strong>Company:</strong> {{ company }}</p>
+            <p><strong>Role:</strong> {{ role }}</p>
+            <p><strong>Interview Date:</strong> {{ interview_date }}</p>
+            <p><strong>Interview Time:</strong> {{ interview_time }}</p>
+        </div>
+
+        <p style="margin-top:25px;">
+            Prepare well, review the company details, and be confident!
+        </p>
+
+        <hr style="border:none; border-top:1px solid #ddd;">
+
+        <p style="color:#888; font-size:12px;">
+            Automated reminder from Job Application Tracker.
+        </p>
+
+    </div>
+</body>
+</html>
