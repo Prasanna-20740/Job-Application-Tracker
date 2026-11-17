@@ -1,45 +1,74 @@
 # Job Application Tracker SaaS
 
-A Python Flask-based Job Application Tracker SaaS designed to help users manage job applications, track application progress, upload resumes, extract skills from PDF resumes, and discover external job opportunities.
+A Flask-based Job Application Tracker SaaS that helps users manage job applications, monitor application progress, upload resumes, extract skills from PDF resumes, discover external job opportunities, and schedule interview reminders.
 
-The application provides secure JWT authentication, RESTful API development, PostgreSQL database integration, automated testing, CI/CD automation, API documentation, external job search integration, and Redis caching.
+The application provides secure JWT authentication, RESTful APIs, PostgreSQL integration, Redis caching, automated email notifications, API documentation, and automated testing.
+
+**GitHub Repository:** https://github.com/Prasanna-20740/Job-Application-Tracker
 
 ---
 
-# Tech Stack
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Development Progress](#project-development-progress)
+- [API Endpoints](#api-endpoints)
+- [Project Structure](#project-structure)
+- [Installation and Setup](#installation-and-setup)
+- [Environment Configuration](#environment-configuration)
+- [Running the Application](#running-the-application)
+- [Email Notification System](#email-notification-system)
+- [Automated Testing](#automated-testing)
+- [Current Project Status](#current-project-status)
+
+---
+
+## Features
+
+- User registration and login using JWT authentication.
+- Secure access and refresh token management.
+- Job application CRUD operations.
+- Application status tracking.
+- Resume upload and PDF text extraction.
+- Resume skill extraction.
+- Application statistics and pagination.
+- External job search using Adzuna API.
+- Redis caching for job search results.
+- Interactive Swagger API documentation.
+- Postman API collection.
+- Weekly job application digest emails.
+- Automated interview reminder emails.
+- HTML email templates using Jinja2.
+- Background scheduling using APScheduler.
+- Automated testing using Pytest.
+- GitHub Actions CI workflow.
+
+---
+
+## Tech Stack
 
 ### Backend
 - Python
 - Flask
 - Flask-OpenAPI3
 
-### Frontend / API Interface
-- Swagger UI
-- Postman
-
-### Database
+### Database and ORM
 - PostgreSQL
 - SQLite (Testing)
-
-### ORM & Database Migrations
 - Flask-SQLAlchemy
 - Flask-Migrate
 - Alembic
 
-### Validation & Serialization
-- Marshmallow
-- Pydantic
-
-### Authentication & Security
+### Authentication and Security
 - JWT (JSON Web Tokens)
 - Flask-JWT-Extended
 - Token Blocklist
 - Protected API Routes
 
-### PDF Processing
-- PyPDF2
-- PDF Text Extraction
-- Resume Skill Extraction
+### Validation and Serialization
+- Marshmallow
+- Pydantic
 
 ### External API Integration
 - Adzuna Job Search API
@@ -49,507 +78,228 @@ The application provides secure JWT authentication, RESTful API development, Pos
 - Redis
 - Flask-Caching
 
-### Testing
+### Email Notifications
+- Flask-Mail
+- Mailtrap SMTP
+- Jinja2 HTML Templates
+- APScheduler
+
+### PDF Processing
+- PyPDF2
+- PDF Text Extraction
+- Resume Skill Extraction
+
+### Testing and DevOps
 - Pytest
 - Factory Boy
 - Pytest-Cov
-
-### DevOps & Tools
+- GitHub Actions
 - Docker
 - Docker Compose
-- Git
-- GitHub
-- GitHub Actions
-- VS Code
+- Git and GitHub
 - Postman
+- VS Code
 
 ---
 
-# Project Development Progress
+## Project Development Progress
 
-## Day 1 – Project Setup & Architecture
+### Day 1 – Project Setup and Architecture
 
-### Project Planning
-- Defined the Job Application Tracker SaaS use case.
-- Identified the main application features and requirements.
-- Planned a modular Flask backend architecture.
-- Identified the database entities and relationships.
-
-### Development Environment
-- Installed and configured Python.
-- Created a Python virtual environment using `venv`.
-- Installed Flask.
-- Installed Flask-SQLAlchemy.
+- Planned the Job Application Tracker SaaS.
+- Identified application requirements and features.
+- Designed the modular Flask backend architecture.
+- Created the Python virtual environment.
+- Installed Flask and Flask-SQLAlchemy.
 - Configured PostgreSQL using Docker.
-- Configured Docker Compose for database management.
-- Initialized the Git repository.
-- Created the initial project structure.
+- Initialized Git and GitHub repository.
 
-### Project Structure Setup
-Created the initial folders:
+### Day 2 – Database Design and Models
 
-- `api/` – API-related modules.
-- `models/` – Database models.
-- `services/` – Business logic.
-- `tests/` – Automated tests.
+- Integrated PostgreSQL with Flask.
+- Configured SQLAlchemy ORM.
+- Integrated Flask-Migrate and Alembic.
+- Created JobApplication model.
+- Created User model.
+- Implemented application status using Python Enum.
+- Designed user and application relationships.
 
----
+### Day 3 – REST API Development
 
-## Day 2 – Database Design & Models
-
-### PostgreSQL Integration
-- Connected Flask application with PostgreSQL.
-- Configured SQLAlchemy database connection.
-- Integrated Flask-Migrate.
-- Configured Alembic for database schema migrations.
-- Created the initial database migration.
-
-### JobApplication Model
-Created the JobApplication database model with the following fields:
-
-- ID
-- Company
-- Role
-- Status
-- Applied Date
-- Notes
-- User ID
-- Resume Path
-
-### Application Status Management
-
-Created an `ApplicationStatus` enum with:
-
-- `APPLIED`
-- `PHONE_SCREEN`
-- `INTERVIEW`
-- `OFFER`
-- `REJECTED`
-
-### User Model
-- Created the User database model.
-- Added user-related fields.
-- Designed the relationship between users and job applications.
-- Prepared the database architecture for multi-user support.
-
----
-
-## Day 3 – REST API Development
-
-### Flask REST API
-- Implemented RESTful API endpoints using Flask.
-- Organized application routes.
-- Implemented CRUD operations for job applications.
-
-### Application CRUD Operations
-
-**Create Application**
-- Created API to add new job applications.
-- Added company, role, status, applied date, and notes.
-- Connected API requests with PostgreSQL.
-
-**Get Applications**
-- Implemented API to retrieve job applications.
-- Added application listing functionality.
-
-**Get Application by ID**
-- Implemented API to retrieve a specific application.
-- Added application ID-based lookup.
-
-**Update Application**
-- Implemented application update functionality.
-- Added support for updating application details and status.
-
-**Delete Application**
-- Implemented application deletion functionality.
-
-### Additional API Features
-- Added request data validation.
+- Implemented RESTful APIs.
+- Developed application CRUD operations.
+- Implemented application creation, retrieval, updating, and deletion.
+- Added request validation.
 - Implemented structured error handling.
 - Added user management endpoints.
-- Handled invalid application IDs.
-- Improved API response consistency.
 
----
+### Day 4 – Resume Upload and PDF Processing
 
-## Day 4 – Resume Upload & PDF Processing
+- Implemented PDF resume upload.
+- Added file type and PDF signature validation.
+- Configured file storage.
+- Integrated PyPDF2.
+- Implemented PDF text extraction.
+- Developed basic resume skill extraction.
+- Created resume-related API endpoints.
 
-### Resume Upload
-- Implemented PDF resume upload functionality.
-- Created resume upload API endpoint.
-- Configured resume file storage.
-- Added file type validation.
-- Added PDF signature validation.
-- Configured maximum upload size restrictions.
-- Implemented resume file path management.
+### Day 5 – Service Layer and Business Logic
 
-### PDF Processing
-- Integrated PyPDF2 for PDF processing.
-- Extracted text from uploaded PDF resumes.
-- Implemented resume text processing.
-- Added basic skill extraction functionality.
+- Created ApplicationService.
+- Separated business logic from API routes.
+- Implemented reusable service methods.
+- Added custom exceptions:
+  - ApplicationNotFound
+  - DuplicateApplication
+- Improved error handling and code organization.
 
-### Resume Skills API
-- Created API endpoint to extract skills from uploaded resumes.
-- Connected PDF processing with the application workflow.
-- Added validation for uploaded resume files.
-- Improved file upload error handling.
+### Day 6 – Pytest and GitHub Actions CI
 
----
-
-## Day 5 – Service Layer & Business Logic
-
-### ApplicationService Implementation
-- Created a dedicated `ApplicationService`.
-- Separated business logic from Flask API routes.
-- Implemented service-layer architecture.
-- Improved code reusability and maintainability.
-
-### Business Operations
-Implemented service methods for:
-
-- Creating job applications.
-- Retrieving all applications.
-- Retrieving applications by ID.
-- Updating application details.
-- Deleting applications.
-- Listing user applications.
-
-### Custom Exception Handling
-Created custom exceptions:
-
-- `ApplicationNotFound`
-- `DuplicateApplication`
-
-### Additional Improvements
-- Implemented duplicate application handling.
-- Improved database interaction.
-- Added service-level error handling.
-- Organized business logic into reusable functions.
-- Improved project maintainability.
-
----
-
-## Day 6 – Pytest Testing & GitHub Actions CI
-
-### Pytest Configuration
-- Installed and configured Pytest.
-- Created `tests/` directory.
-- Configured reusable fixtures using `conftest.py`.
-- Integrated Factory Boy for test data generation.
-- Configured SQLite for isolated test execution.
-- Integrated pytest-cov for code coverage reporting.
-
-### Automated Test Cases
-
-Created and implemented test coverage for:
-
-- Application Service.
-- Application API.
-- File Upload.
-- Helper Functions.
-- Application creation.
-- Application retrieval.
-- Application updates.
-- Application deletion.
-- Error handling.
-- Validation scenarios.
-
-### Test Configuration
+- Configured Pytest.
 - Created reusable test fixtures.
-- Configured test database isolation.
-- Added coverage reporting.
-- Created `.coveragerc`.
-- Added `.gitignore`.
-
-### Test Results
-
-- Successfully passed 83 automated tests.
+- Integrated Factory Boy.
+- Configured SQLite for testing.
+- Integrated pytest-cov.
+- Created application API and service tests.
+- Configured GitHub Actions CI.
+- Successfully passed 83 tests.
 - Achieved 84% overall test coverage.
-- Achieved 85% app.py coverage.
-- Achieved 82% Application Service coverage.
 
-### GitHub Actions CI
-- Created GitHub Actions workflow.
-- Configured automated test execution.
-- Automated testing on push events.
-- Automated testing on pull requests.
-- Verified workflow execution.
-- Successfully achieved a green CI check.
+### Day 7 – JWT Authentication and Advanced Testing
 
----
+- Integrated Flask-JWT-Extended.
+- Implemented user registration and login.
+- Implemented access and refresh tokens.
+- Configured token expiration.
+- Implemented token blocklist.
+- Added logout and token revocation.
+- Protected application API routes.
+- Created authentication test cases.
 
-## Day 7 – JWT Authentication & Advanced Testing
+### Day 8 – REST API Enhancement and Swagger Documentation
 
-### JWT Authentication
-- Installed Flask-JWT-Extended.
-- Implemented JWT-based authentication.
-- Created a dedicated `auth/` package.
-- Implemented user registration.
-- Implemented user login.
-- Added JWT access token generation.
-- Added JWT refresh token generation.
-- Configured access token expiration.
-- Configured refresh token expiration.
-
-### Token Security
-- Implemented JWT token validation.
-- Created token blocklist functionality.
-- Implemented token revocation during logout.
-- Added protected API endpoints.
-- Integrated authentication with application routes.
-- Restricted access to protected resources.
-
-### Database Migration
-- Added authentication-related database changes.
-- Created Alembic migration for token blocklist support.
-- Applied database migration successfully.
-
-### Authentication Testing
-- Created `tests/test_auth.py`.
-- Added registration test cases.
-- Added login test cases.
-- Added token validation test cases.
-- Added refresh token test cases.
-- Added logout and token revocation test cases.
-
-### Advanced Testing Improvements
-- Expanded application API test coverage.
-- Improved file upload test cases.
-- Updated reusable fixtures in `tests/conftest.py`.
-- Updated dependencies in `requirements.txt`.
-- Validated Python code using `py_compile`.
-- Executed automated tests using Pytest.
-
-### Git & GitHub
-- Committed Day 7 changes.
-- Resolved Git synchronization issues.
-- Used Git rebase to synchronize local and remote changes.
-- Successfully pushed Day 7 implementation to GitHub.
-
----
-
-## Day 8 – REST API Enhancement & Swagger Documentation
-
-### Flask-OpenAPI3 Integration
-- Installed Flask-OpenAPI3.
-- Integrated OpenAPI specification with Flask.
+- Integrated Flask-OpenAPI3.
 - Configured Swagger UI.
-- Added interactive API documentation.
-- Documented API request and response schemas.
+- Documented REST API endpoints.
+- Implemented application pagination.
+- Added application statistics.
+- Added pagination response headers.
+- Created Postman collection.
+- Tested CRUD operations and API responses.
 
-### API Documentation
-Configured Swagger UI at:
+Swagger UI:
 
 `http://127.0.0.1:5000/openapi/swagger`
 
-### Application API Enhancements
+### Day 9 – External Job Search API and Redis Caching
 
-Implemented and documented:
+**Adzuna API Integration**
 
-- `GET /applications`
-- `POST /applications`
-- `GET /applications/stats`
-- `GET /applications/{application_id}`
-- `PATCH /applications/{application_id}`
-- `DELETE /applications/{application_id}`
-
-### Pagination
-- Implemented pagination for application listing.
-- Added page and per-page parameters.
-- Added total application count.
-- Added pagination response headers.
-
-Implemented headers:
-
-- `X-Total-Count`
-- `X-Page`
-- `X-Per-Page`
-- `X-Total-Pages`
-
-### Application Statistics
-- Implemented application statistics endpoint.
-- Added application status summary functionality.
-- Enabled retrieval of application statistics through REST API.
-
-### API Testing
-- Created Postman collection.
-- Added API request examples.
-- Tested application CRUD endpoints.
-- Tested application statistics.
-- Tested pagination.
-- Verified API response status codes.
-- Fixed validation response expectations.
-- Corrected update method implementation from PUT to PATCH where required.
-- Successfully executed automated test suite.
-
-### GitHub
-- Committed Day 8 REST API enhancements.
-- Resolved Git rebase synchronization.
-- Successfully pushed Day 8 changes to GitHub.
-
----
-
-## Day 9 – External Job Search API Integration & Redis Caching
-
-### Adzuna Job Search API Integration
-- Registered for the Adzuna Developer API.
-- Integrated Adzuna external job search API.
+- Integrated Adzuna Job Search API.
 - Configured API credentials using environment variables.
-- Used Python Requests to communicate with the external API.
-- Created a dedicated job search service.
+- Implemented keyword-based job search.
+- Implemented location-based job search.
+- Created JobSearchService.
+- Created Pydantic JobSuggestion DTO.
+- Added external API error handling.
 
-### JobSearchService
-Created:
+**Redis Integration**
 
-`services/job_search_service.py`
-
-Implemented:
-
-- External API communication.
-- Keyword-based job search.
-- Location-based job search.
-- Job result processing.
-- Company information extraction.
-- Salary information extraction.
-- Job location extraction.
-- Job description extraction.
-- External job application redirect URL retrieval.
-- API timeout handling.
-- External API error handling.
-- Logging for job search requests.
-
-### JobSuggestion DTO
-Created:
-
-`schemas/job_suggestion.py`
-
-Implemented Pydantic-based job response validation.
-
-Job response fields include:
-
-- Job Title
-- Company
-- Location
-- Minimum Salary
-- Maximum Salary
-- Redirect URL
-- Description
-
-### External Job Search API
-
-Implemented endpoint:
-
-`GET /api/jobs/search`
-
-Example request:
-
-`/api/jobs/search?q=python&location=chennai`
-
-Features:
-
-- Search jobs using keywords.
-- Filter jobs by location.
-- Retrieve external job listings.
-- Return structured JSON responses.
-- Validate external API response data.
-- Handle API configuration errors.
-- Handle external service failures.
-
-### Redis Integration
-- Installed Redis Python client.
-- Integrated Flask-Caching.
-- Configured Redis as the caching backend.
-- Added Redis service to Docker Compose.
-- Started Redis container successfully.
-- Verified Redis connectivity using Redis CLI.
-
-Redis connection:
-
-`redis://localhost:6379/0`
-
-### Redis Caching Implementation
+- Integrated Redis with Flask.
+- Configured Redis using Docker Compose.
 - Implemented job search result caching.
-- Created keyword and location-based cache keys.
-- Added cache hit detection.
-- Added cache miss detection.
-- Configured cache expiration to 30 minutes.
-- Stored validated job search results in Redis.
-- Reduced repeated external API requests.
+- Configured 30-minute cache expiration.
+- Implemented cache hit and cache miss detection.
 
-### Cache Verification
+API example:
 
-**First Request:**
-- Fetches job results from Adzuna API.
-- Returns `source: adzuna_api`.
-- Stores results in Redis.
+`GET /api/jobs/search?q=python&location=chennai`
 
-**Subsequent Request:**
-- Retrieves cached results from Redis.
-- Returns `source: cache`.
-- Avoids another external API request while the cache is valid.
+Cache verification:
+- First request: `source: adzuna_api`
+- Subsequent request: `source: cache`
 
-### Environment Configuration
-- Integrated python-dotenv.
-- Loaded API credentials from `.env`.
-- Used environment variables for API configuration.
-- Avoided hardcoding credentials in application code.
+### Day 10 – Email Notifications and Interview Reminders
 
-### API Testing
-- Started Flask application successfully.
-- Tested job search through Swagger UI.
-- Searched for Python jobs in Chennai.
-- Successfully retrieved five job results.
-- Verified job titles, company names, locations, salary details, and redirect URLs.
-- Verified Redis cache hit on repeated requests.
-- Executed Python syntax validation using `py_compile`.
+**Flask-Mail and SMTP Integration**
 
-### Automated Testing
-Executed:
+- Integrated Flask-Mail.
+- Configured Mailtrap Email Sandbox.
+- Configured SMTP credentials using environment variables.
+- Verified email delivery through Mailtrap.
 
-`pytest -q`
+**Weekly Job Application Digest**
 
-Final result:
+- Retrieves applications updated during the last 7 days.
+- Generates a weekly application summary.
+- Displays company, role, and application status.
+- Sends digest emails to registered users.
+- Configured weekly scheduling for Monday at 9:00 AM.
 
-- **92 tests passed**
-- **0 tests failed**
-- Adzuna API integration verified.
-- Redis caching verified.
-- Existing automated test suite passed.
+**Interview Scheduling and Reminders**
+
+- Created Interview database model.
+- Linked interviews with job applications.
+- Added interview date and time.
+- Added interview type, meeting link, and notes.
+- Implemented automatic interview reminder emails.
+- Checks upcoming interviews every 5 minutes.
+- Sends reminders approximately 24 hours before interviews.
+- Uses `reminder_sent` to prevent duplicate reminders.
+
+**HTML Email Templates**
+
+Created Jinja2 email templates:
+
+- `templates/emails/weekly_digest.html`
+- `templates/emails/interview_reminder.html`
+
+**Background Scheduling**
+
+Integrated APScheduler for:
+- Weekly digest scheduling.
+- Automatic interview reminder checks.
+
+**Testing**
+
+- Weekly digest email successfully delivered to Mailtrap.
+- Interview reminder email successfully delivered to Mailtrap.
+- Verified dynamic email content and HTML formatting.
+- Existing automated test suite passed: 92 tests.
 
 ---
 
-# API Endpoints
+## API Endpoints
 
-## Authentication APIs
+### Authentication APIs
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/auth/register` | Register a new user |
-| POST | `/auth/login` | Authenticate user and generate tokens |
-| POST | `/auth/refresh` | Generate a new access token |
+| POST | `/auth/register` | Register a user |
+| POST | `/auth/login` | User login |
+| POST | `/auth/refresh` | Refresh access token |
 | POST | `/auth/logout` | Revoke authentication token |
 
-## Job Application APIs
+### Job Application APIs
 
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/applications` | Retrieve applications with pagination |
-| POST | `/applications` | Create a new application |
-| GET | `/applications/stats` | Retrieve application statistics |
-| GET | `/applications/{application_id}` | Retrieve application by ID |
+| POST | `/applications` | Create application |
+| GET | `/applications/stats` | Application statistics |
+| GET | `/applications/{application_id}` | Retrieve application |
 | PATCH | `/applications/{application_id}` | Update application |
 | DELETE | `/applications/{application_id}` | Delete application |
 
-## Resume APIs
+### Resume APIs
 
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/applications/{application_id}/resume` | Upload PDF resume |
-| GET | `/applications/{application_id}/skills` | Extract skills from uploaded resume |
+| GET | `/applications/{application_id}/skills` | Extract resume skills |
 | GET | `/files/{filename}` | Access uploaded file where supported |
 
-## External Job Search API
+### External Job Search API
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -561,7 +311,7 @@ Example:
 
 ---
 
-# Project Structure
+## Project Structure
 
 ```text
 Job-Application-Tracker/
@@ -571,7 +321,6 @@ Job-Application-Tracker/
 │       └── tests.yml
 │
 ├── api/
-│
 ├── auth/
 │   ├── __init__.py
 │   └── routes.py
@@ -580,12 +329,18 @@ Job-Application-Tracker/
 │   └── versions/
 │
 ├── models/
-│
 ├── schemas/
 │   └── job_suggestion.py
 │
 ├── services/
-│   └── job_search_service.py
+│   ├── job_search_service.py
+│   ├── email_service.py
+│   └── scheduler_service.py
+│
+├── templates/
+│   └── emails/
+│       ├── weekly_digest.html
+│       └── interview_reminder.html
 │
 ├── tests/
 │   ├── conftest.py
@@ -596,6 +351,7 @@ Job-Application-Tracker/
 │   ├── test_file_upload.py
 │   └── test_helpers.py
 │
+├── postman/
 ├── uploads/
 │
 ├── app.py
@@ -604,15 +360,22 @@ Job-Application-Tracker/
 ├── requirements.txt
 ├── .coveragerc
 ├── .gitignore
-├── .env
 └── README.md
 ```
 
 ---
 
-# Running the Project Locally
+## Installation and Setup
 
-## 1. Clone Repository
+### Prerequisites
+
+- Python 3.10+
+- PostgreSQL
+- Docker Desktop
+- Redis
+- Git
+
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
@@ -620,13 +383,13 @@ git clone https://github.com/Prasanna-20740/Job-Application-Tracker.git
 cd Job-Application-Tracker
 ```
 
-## 2. Create Virtual Environment
+### 2. Create Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-## 3. Activate Virtual Environment
+### 3. Activate Virtual Environment
 
 Windows PowerShell:
 
@@ -634,30 +397,19 @@ Windows PowerShell:
 .venv\Scripts\Activate.ps1
 ```
 
-## 4. Install Dependencies
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 5. Configure Environment Variables
+### 5. Configure Environment Variables
 
 Create a `.env` file in the project root.
 
-Example:
+Refer to the Environment Configuration section below.
 
-```env
-ADZUNA_APP_ID=your_adzuna_app_id
-ADZUNA_APP_KEY=your_adzuna_app_key
-
-REDIS_URL=redis://localhost:6379/0
-```
-
-Configure the PostgreSQL database connection using the database settings expected by the application.
-
-**Security:** Never commit `.env` or real API credentials to GitHub. Use placeholder values in `.env.example`.
-
-## 6. Start PostgreSQL and Redis
+### 6. Start PostgreSQL and Redis
 
 ```bash
 docker compose up -d
@@ -681,13 +433,13 @@ Expected output:
 PONG
 ```
 
-## 7. Run Database Migrations
+### 7. Run Database Migrations
 
 ```bash
-flask db upgrade
+flask --app app db upgrade
 ```
 
-## 8. Start Flask Application
+### 8. Start Flask Application
 
 ```bash
 python app.py
@@ -701,14 +453,73 @@ Swagger UI:
 
 `http://127.0.0.1:5000/openapi/swagger`
 
+Keep the application process running for the background scheduler jobs to execute.
+
 ---
 
-# Running Automated Tests
+## Environment Configuration
+
+Create a `.env` file in the project root.
+
+Example:
+
+```env
+# Adzuna API
+ADZUNA_APP_ID=your_adzuna_app_id
+ADZUNA_APP_KEY=your_adzuna_app_key
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Mailtrap SMTP
+MAIL_SERVER=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your_mailtrap_username
+MAIL_PASSWORD=your_mailtrap_password
+MAIL_USE_TLS=True
+MAIL_USE_SSL=False
+MAIL_DEFAULT_SENDER=testing@example.com
+```
+
+Configure the PostgreSQL connection according to the database settings used by the application.
+
+**Security:** Never commit `.env` or real API credentials to GitHub. Use placeholder values in `.env.example`.
+
+---
+
+## Email Notification System
+
+### Weekly Digest
+
+- Runs every Monday at 9:00 AM.
+- Retrieves applications updated during the previous 7 days.
+- Sends an HTML summary email.
+- Displays application details.
+
+### Interview Reminder
+
+- Scheduler checks every 5 minutes.
+- Finds interviews approximately 24 hours before their scheduled time.
+- Sends an HTML reminder email.
+- Updates the `reminder_sent` database field after successful delivery.
+
+### Email Testing
+
+Mailtrap Email Sandbox was used to verify:
+- SMTP connectivity.
+- Weekly digest delivery.
+- Interview reminder delivery.
+- Jinja2 dynamic content.
+- HTML email rendering.
+
+---
+
+## Automated Testing
 
 Run all tests:
 
 ```bash
-pytest -v
+pytest -q
 ```
 
 Run tests with coverage:
@@ -723,127 +534,53 @@ Run authentication tests:
 pytest tests/test_auth.py -v
 ```
 
----
-
-# Test Results
+### Latest Test Results – Day 10
 
 | Metric | Result |
 |---|---:|
-| Day 6 Tests Passed | 83 |
-| Day 6 Overall Coverage | 84% |
-| Day 6 app.py Coverage | 85% |
-| Day 6 Application Service Coverage | 82% |
-| GitHub Actions CI | Passed |
-| Latest Day 9 Tests Passed | 92 |
-| Latest Day 9 Tests Failed | 0 |
-| Adzuna API Integration | Verified |
-| Redis Caching | Verified |
-| Swagger API Documentation | Implemented |
+| Total Tests Passed | 92 |
+| Tests Failed | 0 |
+| Execution Time | 1.74 seconds |
+| Weekly Digest Email | Verified |
+| Interview Reminder Email | Verified |
+| HTML Templates | Verified |
 
-*Day 6 coverage metrics are historical. The Day 9 result represents the latest successful test execution.*
-
-
-
-## Day 10 – Email Notifications and Interview Reminders
-
-### Features Implemented
-
-- Integrated Flask-Mail for SMTP email delivery.
-- Configured Mailtrap Email Sandbox for testing.
-- Created responsive HTML email templates using Jinja2.
-- Implemented weekly job application digest emails.
-- Added interview scheduling using an Interview database model.
-- Implemented interview reminder emails approximately 24 hours before interviews.
-- Integrated APScheduler for background scheduling.
-
-### Email Notifications
-
-**1. Weekly Job Application Digest**
-- Retrieves applications updated during the last 7 days.
-- Sends a summary email to registered users.
-- Displays company, role, and application status.
-- Scheduled every Monday at 9:00 AM.
-
-**2. Interview Reminder**
-- Checks upcoming interviews every 5 minutes.
-- Sends reminders approximately 24 hours before interviews.
-- Prevents duplicate reminders using the `reminder_sent` field.
-- Includes company, role, interview date, and time.
-
-### Technologies Used
-
-- Flask-Mail
-- Mailtrap SMTP
-- Jinja2 HTML Templates
-- APScheduler
-- PostgreSQL
-- Flask-SQLAlchemy
-
-### Testing Results
-
-- Weekly digest email successfully delivered to Mailtrap.
-- Interview reminder email successfully delivered to Mailtrap.
-- HTML templates and dynamic values verified.
-- Pytest: 92 passed.
-
-### Environment Variables
-
-Configure the following variables in your `.env` file:
-
-```env
-MAIL_SERVER=sandbox.smtp.mailtrap.io
-MAIL_PORT=2525
-MAIL_USERNAME=your_mailtrap_username
-MAIL_PASSWORD=your_mailtrap_password
-MAIL_USE_TLS=True
-MAIL_USE_SSL=False
-MAIL_DEFAULT_SENDER=testing@example.com
-```
-
-Never commit your `.env` file or expose SMTP credentials.
-
+Historical Day 6 coverage:
+- Overall coverage: 84%
+- app.py coverage: 85%
+- Application Service coverage: 82%
 
 ---
 
-# GitHub Repository
+## Current Project Status
 
-**Repository:**  
-https://github.com/Prasanna-20740/Job-Application-Tracker
-
----
-
-# Current Project Status
-
-**Completed Development:** Day 1 – Day 9
+**Completed Development: Day 1 – Day 10**
 
 ### Major Features Completed
 
-- Flask application architecture.
+- Flask backend architecture.
 - PostgreSQL database integration.
-- SQLAlchemy database models.
-- Alembic database migrations.
+- SQLAlchemy models and Alembic migrations.
 - RESTful CRUD APIs.
 - Multi-user database structure.
-- Resume upload functionality.
-- PDF text extraction.
-- Resume skill extraction.
+- PDF resume upload and skill extraction.
 - Service-layer architecture.
-- Custom exception handling.
-- JWT authentication.
-- Access and refresh tokens.
-- Token blocklist and logout functionality.
-- Automated testing with Pytest.
-- Factory Boy test data generation.
-- Test coverage reporting.
-- GitHub Actions CI.
+- JWT authentication and token management.
 - Swagger API documentation.
-- Application pagination.
-- Application statistics.
+- Application pagination and statistics.
 - Postman API collection.
 - Adzuna external job search.
 - Pydantic DTO validation.
 - Redis caching.
 - Docker-based PostgreSQL and Redis services.
+- Pytest automated testing.
+- GitHub Actions CI.
+- Flask-Mail SMTP integration.
+- Weekly application digest emails.
+- Interview scheduling model.
+- Automated interview reminders.
+- Jinja2 HTML email templates.
+- APScheduler background jobs.
 
 ### Latest Test Execution
 
@@ -851,4 +588,16 @@ https://github.com/Prasanna-20740/Job-Application-Tracker
 
 ---
 
-Developed as a hands-on Python Flask SaaS project, with a focus on backend development, REST API design, database management, authentication, external API integration, caching, automated testing, and CI/CD.
+## Developer
+
+**Prasanna P**
+
+GitHub: https://github.com/Prasanna-20740
+
+LinkedIn: https://www.linkedin.com/in/prasanna-p20/
+
+Portfolio: https://prasanna-p.vercel.app/
+
+---
+
+Developed as a hands-on Python Flask SaaS project, focusing on backend development, REST API design, database management, authentication, external API integration, caching, email automation, automated testing, and CI/CD.
