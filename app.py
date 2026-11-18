@@ -5,6 +5,8 @@ import logging
 import os
 import re
 import uuid
+import csv
+import io
 
 from dotenv import load_dotenv
 from flask_caching import Cache
@@ -32,7 +34,8 @@ from werkzeug.security import (
 from flask import (
     jsonify,
     request,
-    send_from_directory
+    send_from_directory,
+    Response
 )
 
 from flask_openapi3 import OpenAPI, Info
@@ -943,6 +946,321 @@ def get_applications(query: ApplicationQuery):
         }), 500
 
 # --------------------------------------------------
+# CSV Import API
+# --------------------------------------------------
+
+@app.route("/applications/import", methods=["POST"])
+@jwt_required()
+def import_applications():
+
+    current_user_id = int(get_jwt_identity())
+
+    uploaded_file = request.files.get("file")
+
+    if not uploaded_file:
+        return jsonify({
+            "error": "Please upload a CSV file using the 'file' field"
+        }), 400
+
+    if not uploaded_file.filename.lower().endswith(".csv"):
+        return jsonify({
+            "error": "Only CSV files are allowed"
+        }), 400
+
+    try:
+        csv_content = uploaded_file.read().decode("utf-8-sig")
+        csv_file = io.StringIO(csv_content)
+
+        reader = csv.DictReader(csv_file)
+
+        required_headers = {
+            "id",
+            "company",
+            "role",
+            "status",
+            "applied_date",
+            "notes"
+        }
+
+        actual_headers = set(reader.fieldnames or [])
+        missing_headers = required_headers - actual_headers
+
+        if missing_headers:
+            return jsonify({
+                "error": "Invalid CSV headers",
+                "missing_headers": sorted(missing_headers)
+            }), 400
+
+        created_count = 0
+        updated_count = 0
+        errors = []
+
+        for row_number, row in enumerate(reader, start=2):
+
+            try:
+                with db.session.begin_nested():
+
+                    application_id = (row.get("id") or "").strip()
+
+                    if application_id:
+                        if not application_id.isdigit():
+                            raise ValueError("Invalid application ID")
+
+                        application = JobApplication.query.filter_by(
+                            id=int(application_id),
+                            user_id=current_user_id
+                        ).first()
+
+                        if not application:
+                            raise ValueError(
+                                "Application not found or access denied"
+                            )
+
+                    else:
+                        application = None
+
+                    data = {
+                        "company": (row.get("company") or "").strip(),
+                        "role": (row.get("role") or "").strip(),
+                        "status": (
+                            (row.get("status") or "APPLIED").strip().upper()
+                        ),
+                        "applied_date": (
+                            row.get("applied_date") or ""
+                        ).strip() or date.today().isoformat(),
+                        "notes": (row.get("notes") or "").strip() or None
+                    }
+
+                    if not data["role"]:
+                        raise ValueError("Role cannot be empty")
+
+                    parsed = ApplicationSchema().load(data)
+
+                    if application:
+                        application.company = parsed["company"]
+                        application.role = parsed["role"]
+                        application.status = ApplicationStatus(
+                            parsed["status"]
+                        )
+                        application.applied_date = parsed["applied_date"]
+                        application.notes = parsed["notes"]
+
+                        updated_count += 1
+
+                    else:
+                        application = JobApplication(
+                            company=parsed["company"],
+                            role=parsed["role"],
+                            status=ApplicationStatus(parsed["status"]),
+                            applied_date=parsed["applied_date"],
+                            notes=parsed["notes"],
+                            user_id=current_user_id
+                        )
+
+                        db.session.add(application)
+                        db.session.flush()
+
+                        created_count += 1
+
+            except Exception as row_error:
+                errors.append({
+                    "row": row_number,
+                    "id": row.get("id", ""),
+                    "company": row.get("company", ""),
+                    "error": str(row_error)
+                })
+
+        db.session.commit()
+
+        if errors:
+            error_output = io.StringIO()
+            error_writer = csv.writer(error_output)
+
+            error_writer.writerow([
+                "row",
+                "id",
+                "company",
+                "error"
+            ])
+
+            for error in errors:
+                error_writer.writerow([
+                    error["row"],
+                    error["id"],
+                    error["company"],
+                    error["error"]
+                ])
+
+            return Response(
+                error_output.getvalue(),
+                mimetype="text/csv",
+                headers={
+                    "Content-Disposition":
+                        "attachment; filename=import_error_log.csv",
+                    "X-Created-Count": str(created_count),
+                    "X-Updated-Count": str(updated_count),
+                    "X-Failed-Count": str(len(errors))
+                }
+            )
+
+        return jsonify({
+            "message": "CSV import completed successfully",
+            "created": created_count,
+            "updated": updated_count,
+            "failed": 0
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        logger.exception("CSV import failed")
+
+        return jsonify({
+            "error": "CSV import failed",
+            "status_code": 500
+        }), 500
+
+# --------------------------------------------------
+# Bulk Status Update API
+# --------------------------------------------------
+
+@app.route("/applications/bulk-status-update", methods=["POST"])
+@jwt_required()
+def bulk_status_update():
+
+    current_user_id = int(get_jwt_identity())
+
+    uploaded_file = request.files.get("file")
+
+    if not uploaded_file:
+        return jsonify({
+            "error": "Please upload a CSV file using the 'file' field"
+        }), 400
+
+    if not uploaded_file.filename.lower().endswith(".csv"):
+        return jsonify({
+            "error": "Only CSV files are allowed"
+        }), 400
+
+    try:
+        csv_content = uploaded_file.read().decode("utf-8-sig")
+        csv_file = io.StringIO(csv_content)
+        reader = csv.DictReader(csv_file)
+
+        required_headers = {"id", "status"}
+        actual_headers = set(reader.fieldnames or [])
+        missing_headers = required_headers - actual_headers
+
+        if missing_headers:
+            return jsonify({
+                "error": "Invalid CSV headers",
+                "missing_headers": sorted(missing_headers)
+            }), 400
+
+        updated_count = 0
+        failed_count = 0
+        errors = []
+
+        valid_statuses = {
+            status.value for status in ApplicationStatus
+        }
+
+        for row_number, row in enumerate(reader, start=2):
+
+            try:
+                with db.session.begin_nested():
+
+                    application_id = (
+                        row.get("id") or ""
+                    ).strip()
+
+                    status_value = (
+                        row.get("status") or ""
+                    ).strip().upper()
+
+                    if not application_id.isdigit():
+                        raise ValueError("Invalid application ID")
+
+                    if status_value not in valid_statuses:
+                        raise ValueError(
+                            f"Invalid status. Allowed values: "
+                            f"{', '.join(sorted(valid_statuses))}"
+                        )
+
+                    application = JobApplication.query.filter_by(
+                        id=int(application_id),
+                        user_id=current_user_id
+                    ).first()
+
+                    if not application:
+                        raise ValueError(
+                            "Application not found or access denied"
+                        )
+
+                    application.status = ApplicationStatus(status_value)
+
+                    db.session.flush()
+
+                updated_count += 1
+
+            except Exception as row_error:
+
+                failed_count += 1
+
+                errors.append({
+                    "row": row_number,
+                    "id": row.get("id", ""),
+                    "status": row.get("status", ""),
+                    "error": str(row_error)
+                })
+
+        db.session.commit()
+
+        if errors:
+            error_output = io.StringIO()
+            error_writer = csv.writer(error_output)
+
+            error_writer.writerow([
+                "row",
+                "id",
+                "status",
+                "error"
+            ])
+
+            for error in errors:
+                error_writer.writerow([
+                    error["row"],
+                    error["id"],
+                    error["status"],
+                    error["error"]
+                ])
+
+            return Response(
+                error_output.getvalue(),
+                mimetype="text/csv",
+                headers={
+                    "Content-Disposition":
+                        "attachment; filename=bulk_status_error_log.csv",
+                    "X-Updated-Count": str(updated_count),
+                    "X-Failed-Count": str(failed_count)
+                }
+            )
+
+        return jsonify({
+            "message": "Bulk status update completed successfully",
+            "updated": updated_count,
+            "failed": 0
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        logger.exception("Bulk status update failed")
+
+        return jsonify({
+            "error": "Bulk status update failed",
+            "status_code": 500
+        }), 500
+
+# --------------------------------------------------
 # Create Application API
 # --------------------------------------------------
 
@@ -1031,6 +1349,71 @@ def application_stats():
         return jsonify({
             "error": "Internal server error",
             "details": {},
+            "status_code": 500
+        }), 500
+
+# --------------------------------------------------
+# CSV Export API
+# --------------------------------------------------
+
+@app.get(
+    "/applications/export",
+    summary="Export applications as CSV",
+    description="Download the logged-in user's applications as a CSV file",
+    security=security
+)
+@jwt_required()
+def export_applications():
+
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        applications = JobApplication.query.filter_by(
+            user_id=current_user_id
+        ).order_by(JobApplication.id.asc()).all()
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # CSV column headers
+        writer.writerow([
+            "id",
+            "company",
+            "role",
+            "status",
+            "applied_date",
+            "notes"
+        ])
+
+        # Write application records
+        for application in applications:
+            writer.writerow([
+                application.id,
+                application.company,
+                application.role,
+                application.status.value,
+                application.applied_date.isoformat()
+                if application.applied_date else "",
+                application.notes or ""
+            ])
+
+        csv_data = output.getvalue()
+        output.close()
+
+        return Response(
+            csv_data,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition":
+                    "attachment; filename=job_applications.csv"
+            }
+        )
+
+    except Exception:
+        logger.exception("CSV export failed")
+
+        return jsonify({
+            "error": "Failed to export applications",
             "status_code": 500
         }), 500
 

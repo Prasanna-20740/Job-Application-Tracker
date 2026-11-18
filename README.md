@@ -550,6 +550,68 @@ Historical Day 6 coverage:
 - app.py coverage: 85%
 - Application Service coverage: 82%
 
+## Day 11 – CSV Import, Export and Bulk Updates
+
+### Features Implemented
+
+**1. CSV Export**
+- Export all applications belonging to the authenticated user.
+- Download application records as `job_applications.csv`.
+- Includes ID, company, role, status, applied date and notes.
+- Protects user data through JWT authentication and user-level filtering.
+
+**2. CSV Import**
+- Upload application records using a CSV file.
+- Validate required CSV headers and application fields.
+- Create new applications when ID is empty.
+- Update existing applications using their application ID.
+- Skip invalid rows without stopping the entire import.
+- Generate `import_error_log.csv` for failed rows.
+
+**3. Bulk Status Update**
+- Update multiple application statuses using a CSV file.
+- Validate application IDs and status values.
+- Support statuses: APPLIED, PHONE_SCREEN, INTERVIEW, OFFER and REJECTED.
+- Skip invalid records and generate an error log.
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/applications/export` | Export applications as CSV |
+| POST | `/applications/import` | Import and update applications using CSV |
+| POST | `/applications/bulk-status-update` | Update multiple application statuses |
+
+All three endpoints require JWT authentication.
+
+### CSV Round-Trip Testing
+
+- Exported application records to CSV.
+- Edited three application records.
+- Re-imported the modified CSV.
+- Verified updated roles and statuses through the applications API.
+- Confirmed that existing records were updated without creating duplicates.
+- Tested invalid rows and error log generation.
+
+### Automated Testing
+
+Added `tests/test_csv_api.py` with 8 automated tests covering:
+- CSV export and user data isolation.
+- CSV import create and update operations.
+- Invalid row handling and error logs.
+- Missing header validation.
+- Bulk status update success and failure cases.
+
+**Test Results:**
+- Total tests: 100 passed
+- Failed tests: 0
+- Application code coverage: 81%
+
+### Day 11 Deliverable
+
+Completed CSV export/import round-trip, validation, error reporting and bulk status updates with successful manual and automated testing.
+
+
 ---
 
 ## Current Project Status
