@@ -343,6 +343,46 @@ class Interview(db.Model):
         "JobApplication",
         backref=db.backref("interviews", lazy=True)
     )
+
+# --------------------------------------------------
+# Application Status History Model
+# --------------------------------------------------
+
+class ApplicationStatusHistory(db.Model):
+    __tablename__ = "application_status_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    application_id = db.Column(
+        db.Integer,
+        db.ForeignKey("job_application.id"),
+        nullable=False,
+        index=True
+    )
+
+    status = db.Column(
+        db.Enum(
+            ApplicationStatus,
+            name="application_history_status"
+        ),
+        nullable=False
+    )
+
+    entered_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    exited_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    application = db.relationship(
+        "JobApplication",
+        backref=db.backref("status_history", lazy=True)
+    )
  
 # --------------------------------------------------
 # JWT Token Blocklist Callback
@@ -558,7 +598,8 @@ from services.application_service import (
 application_service = ApplicationService(
     db,
     JobApplication,
-    ApplicationStatus
+    ApplicationStatus,
+    ApplicationStatusHistory
 )
 
 
@@ -1036,12 +1077,43 @@ def import_applications():
 
                     parsed = ApplicationSchema().load(data)
 
+                    
                     if application:
                         application.company = parsed["company"]
                         application.role = parsed["role"]
-                        application.status = ApplicationStatus(
+
+                        # Track status changes
+                        new_status = ApplicationStatus(
                             parsed["status"]
                         )
+                        old_status = application.status
+
+                        if new_status != old_status:
+                            current_history = (
+                                ApplicationStatusHistory.query
+                                .filter_by(
+                                    application_id=application.id,
+                                    exited_at=None
+                                )
+                                .order_by(
+                                    ApplicationStatusHistory.entered_at.desc()
+                                )
+                                .first()
+                            )
+
+                            if current_history:
+                                current_history.exited_at = datetime.utcnow()
+
+                            new_history = ApplicationStatusHistory(
+                                application_id=application.id,
+                                status=new_status,
+                                entered_at=datetime.utcnow(),
+                                exited_at=None
+                            )
+
+                            db.session.add(new_history)
+
+                        application.status = new_status
                         application.applied_date = parsed["applied_date"]
                         application.notes = parsed["notes"]
 
@@ -1060,7 +1132,18 @@ def import_applications():
                         db.session.add(application)
                         db.session.flush()
 
+                        # Create initial status history
+                        new_history = ApplicationStatusHistory(
+                            application_id=application.id,
+                            status=application.status,
+                            entered_at=datetime.utcnow(),
+                            exited_at=None
+                        )
+
+                        db.session.add(new_history)
+
                         created_count += 1
+
 
             except Exception as row_error:
                 errors.append({
@@ -1196,9 +1279,42 @@ def bulk_status_update():
                             "Application not found or access denied"
                         )
 
-                    application.status = ApplicationStatus(status_value)
+                    
+                    new_status = ApplicationStatus(status_value)
+                    old_status = application.status
+
+                    if new_status != old_status:
+
+                        # Close the previous status history
+                        current_history = (
+                            ApplicationStatusHistory.query
+                            .filter_by(
+                                application_id=application.id,
+                                exited_at=None
+                            )
+                            .order_by(
+                                ApplicationStatusHistory.entered_at.desc()
+                            )
+                            .first()
+                        )
+
+                        if current_history:
+                            current_history.exited_at = datetime.utcnow()
+
+                        # Create history for the new status
+                        new_history = ApplicationStatusHistory(
+                            application_id=application.id,
+                            status=new_status,
+                            entered_at=datetime.utcnow(),
+                            exited_at=None
+                        )
+
+                        db.session.add(new_history)
+
+                        application.status = new_status
 
                     db.session.flush()
+
 
                 updated_count += 1
 
@@ -1349,6 +1465,117 @@ def application_stats():
         return jsonify({
             "error": "Internal server error",
             "details": {},
+            "status_code": 500
+        }), 500
+
+# --------------------------------------------------
+# Analytics API
+# --------------------------------------------------
+
+@app.get(
+    "/api/analytics",
+    summary="Get application analytics",
+    description="Get detailed job application analytics for the logged-in user",
+    security=security
+)
+@jwt_required()
+def application_analytics():
+
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        # 1. Get all applications of the logged-in user
+        applications = JobApplication.query.filter_by(
+            user_id=current_user_id
+        ).all()
+
+        total_applications = len(applications)
+
+        # 2. Calculate response rate
+        interview_count = sum(
+            1 for application in applications
+            if application.status == ApplicationStatus.INTERVIEW
+        )
+
+        response_rate = (
+            (interview_count / total_applications) * 100
+            if total_applications > 0 else 0
+        )
+
+        # 3. Calculate status distribution
+        status_distribution = {
+            status.value: sum(
+                1 for application in applications
+                if application.status == status
+            )
+            for status in ApplicationStatus
+        }
+
+        # 4. Calculate average time spent in each status
+        history_records = (
+            ApplicationStatusHistory.query
+            .join(
+                JobApplication,
+                ApplicationStatusHistory.application_id == JobApplication.id
+            )
+            .filter(JobApplication.user_id == current_user_id)
+            .all()
+        )
+
+        current_time = datetime.utcnow()
+        status_durations = {
+            status.value: [] for status in ApplicationStatus
+        }
+
+        for history in history_records:
+            end_time = history.exited_at or current_time
+
+            duration_days = (
+                end_time - history.entered_at
+            ).total_seconds() / 86400
+
+            status_durations[history.status.value].append(
+                max(duration_days, 0)
+            )
+
+        average_days_per_status = {
+            status: round(sum(durations) / len(durations), 2)
+            if durations else 0
+            for status, durations in status_durations.items()
+        }
+
+        # 5. Find the best day of the week to apply
+        weekday_counts = {
+            day: 0
+            for day in [
+                "Monday", "Tuesday", "Wednesday",
+                "Thursday", "Friday", "Saturday", "Sunday"
+            ]
+        }
+
+        for application in applications:
+            day = application.applied_date.strftime("%A")
+            weekday_counts[day] += 1
+
+        best_day_to_apply = (
+            max(weekday_counts, key=weekday_counts.get)
+            if total_applications > 0 else None
+        )
+
+        return jsonify({
+            "total_applications": total_applications,
+            "response_rate": round(response_rate, 2),
+            "average_days_per_status": average_days_per_status,
+            "best_day_to_apply": best_day_to_apply,
+            "weekday_application_counts": weekday_counts,
+            "status_distribution": status_distribution
+        }), 200
+
+    except Exception:
+        logger.exception("Error retrieving application analytics")
+
+        return jsonify({
+            "error": "Internal server error",
             "status_code": 500
         }), 500
 

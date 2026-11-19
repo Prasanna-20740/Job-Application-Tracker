@@ -1,5 +1,5 @@
 
-from datetime import date
+from datetime import date, datetime
 import logging
 
 # Logger setup
@@ -20,10 +20,17 @@ class DuplicateApplication(Exception):
 # Application Service
 class ApplicationService:
 
-    def __init__(self, db, JobApplication, ApplicationStatus):
+    def __init__(
+        self,
+        db,
+        JobApplication,
+        ApplicationStatus,
+        ApplicationStatusHistory=None
+    ):
         self.db = db
         self.JobApplication = JobApplication
         self.ApplicationStatus = ApplicationStatus
+        self.ApplicationStatusHistory = ApplicationStatusHistory
 
     # 1. Create Application
     def create_application(
@@ -70,6 +77,19 @@ class ApplicationService:
             )
 
             self.db.session.add(application)
+            self.db.session.flush()
+
+            # Create initial status history
+            if self.ApplicationStatusHistory:
+                history = self.ApplicationStatusHistory(
+                    application_id=application.id,
+                    status=application.status,
+                    entered_at=datetime.utcnow(),
+                    exited_at=None
+                )
+
+                self.db.session.add(history)
+
             self.db.session.commit()
 
             logger.info(
@@ -133,7 +153,7 @@ class ApplicationService:
 
             # Validate role
             if not isinstance(new_role, str) or not new_role.strip():
-                raise ValueError("Valid job role is required")
+                raise ValueError("Valid role is required")
 
             # Check duplicate excluding current application
             duplicate = self.JobApplication.query.filter(
@@ -151,16 +171,47 @@ class ApplicationService:
             application.company = new_company.strip()
             application.role = new_role.strip()
 
-            # Update status
+            # Update status and track status history
             if "status" in data:
                 status = data["status"]
 
                 if not isinstance(status, str):
                     raise ValueError("Valid status is required")
 
-                application.status = self.ApplicationStatus(
+                new_status = self.ApplicationStatus(
                     status.strip().upper()
                 )
+
+                old_status = application.status
+
+                if new_status != old_status:
+
+                    if self.ApplicationStatusHistory:
+                        current_history = (
+                            self.ApplicationStatusHistory.query
+                            .filter_by(
+                                application_id=application.id,
+                                exited_at=None
+                            )
+                            .order_by(
+                                self.ApplicationStatusHistory.entered_at.desc()
+                            )
+                            .first()
+                        )
+
+                        if current_history:
+                            current_history.exited_at = datetime.utcnow()
+
+                        new_history = self.ApplicationStatusHistory(
+                            application_id=application.id,
+                            status=new_status,
+                            entered_at=datetime.utcnow(),
+                            exited_at=None
+                        )
+
+                        self.db.session.add(new_history)
+
+                    application.status = new_status
 
             # Update notes
             if "notes" in data:
@@ -196,7 +247,11 @@ class ApplicationService:
 
             return application
 
-        except (ApplicationNotFound, DuplicateApplication, ValueError):
+        except (
+            ApplicationNotFound,
+            DuplicateApplication,
+            ValueError
+        ):
             self.db.session.rollback()
             raise
 
@@ -205,10 +260,16 @@ class ApplicationService:
             logger.exception("Failed to update application")
             raise
 
-    # 4. Delete Application
+        # 4. Delete Application
     def delete_application(self, application_id):
         try:
             application = self.get_application(application_id)
+
+            # Delete related status history records first
+            if self.ApplicationStatusHistory:
+                self.ApplicationStatusHistory.query.filter_by(
+                    application_id=application.id
+                ).delete(synchronize_session=False)
 
             self.db.session.delete(application)
             self.db.session.commit()
