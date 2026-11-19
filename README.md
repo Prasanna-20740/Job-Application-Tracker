@@ -1,8 +1,8 @@
 # Job Application Tracker SaaS
 
-A Flask-based Job Application Tracker SaaS that helps users manage job applications, monitor application progress, upload resumes, extract skills from PDF resumes, discover external job opportunities, and schedule interview reminders.
+A Flask-based Job Application Tracker SaaS that helps users manage job applications, monitor application progress, upload resumes, extract skills from PDF resumes, discover external job opportunities, analyze application performance, and schedule interview reminders.
 
-The application provides secure JWT authentication, RESTful APIs, PostgreSQL integration, Redis caching, automated email notifications, API documentation, and automated testing.
+The application provides secure JWT authentication, RESTful APIs, PostgreSQL integration, Redis caching, automated email notifications, analytics, API documentation, and automated testing.
 
 **GitHub Repository:** https://github.com/Prasanna-20740/Job-Application-Tracker
 
@@ -29,7 +29,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - User registration and login using JWT authentication.
 - Secure access and refresh token management.
 - Job application CRUD operations.
-- Application status tracking.
+- Application status tracking and history.
 - Resume upload and PDF text extraction.
 - Resume skill extraction.
 - Application statistics and pagination.
@@ -41,6 +41,12 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - Automated interview reminder emails.
 - HTML email templates using Jinja2.
 - Background scheduling using APScheduler.
+- CSV application import and export.
+- Bulk application status updates.
+- Application analytics and performance tracking.
+- Response rate calculation.
+- Average time spent in each application status.
+- Best weekday to apply analysis.
 - Automated testing using Pytest.
 - GitHub Actions CI workflow.
 
@@ -88,6 +94,18 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - PyPDF2
 - PDF Text Extraction
 - Resume Skill Extraction
+
+### Data Import and Export
+- Python CSV
+- CSV Import and Export
+- Bulk Status Updates
+
+### Analytics
+- SQLAlchemy Queries
+- Application Status History
+- Response Rate Calculation
+- Time-in-Stage Analysis
+- Weekday Application Analysis
 
 ### Testing and DevOps
 - Pytest
@@ -267,6 +285,164 @@ Integrated APScheduler for:
 - Verified dynamic email content and HTML formatting.
 - Existing automated test suite passed: 92 tests.
 
+### Day 11 – CSV Import, Export and Bulk Updates
+
+**1. CSV Export**
+
+- Export all applications belonging to the authenticated user.
+- Download application records as `job_applications.csv`.
+- Includes ID, company, role, status, applied date and notes.
+- Protects user data through JWT authentication and user-level filtering.
+
+**2. CSV Import**
+
+- Upload application records using a CSV file.
+- Validate required CSV headers and application fields.
+- Create new applications when ID is empty.
+- Update existing applications using their application ID.
+- Skip invalid rows without stopping the entire import.
+- Generate an error log for failed rows.
+
+**3. Bulk Status Update**
+
+- Update multiple application statuses using a CSV file.
+- Validate application IDs and status values.
+- Support statuses: APPLIED, PHONE_SCREEN, INTERVIEW, OFFER and REJECTED.
+- Skip invalid records and generate an error log.
+
+**API Endpoints**
+
+- `GET /applications/export`
+- `POST /applications/import`
+- `POST /applications/bulk-status-update`
+
+All three endpoints require JWT authentication.
+
+**CSV Round-Trip Testing**
+
+- Exported application records to CSV.
+- Edited three application records.
+- Re-imported the modified CSV.
+- Verified updated roles and statuses through the applications API.
+- Confirmed that existing records were updated without creating duplicates.
+- Tested invalid rows and error log generation.
+
+**Automated Testing**
+
+Added `tests/test_csv_api.py` with 8 automated tests covering:
+- CSV export and user data isolation.
+- CSV import create and update operations.
+- Invalid row handling and error logs.
+- Missing header validation.
+- Bulk status update success and failure cases.
+
+**Test Results:**
+- Total tests: 100 passed
+- Failed tests: 0
+- Application code coverage: 81%
+
+### Day 12 – Analytics Dashboard Backend
+
+**1. Application Status History**
+
+- Created `ApplicationStatusHistory` database model.
+- Added application status history tracking.
+- Stored status entry and exit timestamps.
+- Recorded initial application status.
+- Updated status history when an application status changes.
+- Integrated status history tracking into application creation and updates.
+- Added status history tracking to CSV import and bulk status update operations.
+- Created and executed Alembic database migration.
+
+Migration:
+
+`70a60851e7bc_add_application_status_history_table.py`
+
+**2. Response Rate Calculation**
+
+Implemented response rate calculation:
+
+`Response Rate = (Interview Applications / Total Applications) × 100`
+
+The API calculates the percentage of applications that reached the INTERVIEW status.
+
+**3. Time-in-Stage Analysis**
+
+- Calculates the average number of days spent in each application status.
+- Uses status entry and exit timestamps.
+- Tracks the current stage using the current time when no exit timestamp exists.
+- Provides average duration for APPLIED, PHONE_SCREEN, INTERVIEW, OFFER and REJECTED statuses.
+
+**4. Best Day to Apply**
+
+- Analyzes application dates.
+- Groups applications by weekday.
+- Calculates the number of applications submitted on each weekday.
+- Identifies the weekday with the highest number of applications.
+
+**5. Application Analytics API**
+
+Implemented an authenticated analytics endpoint:
+
+`GET /api/analytics`
+
+The endpoint returns:
+
+- `total_applications`
+- `response_rate`
+- `average_days_per_status`
+- `best_day_to_apply`
+- `weekday_application_counts`
+- `status_distribution`
+
+**6. Seed Data and Manual Verification**
+
+- Created 50 sample job applications.
+- Generated varied application dates and statuses.
+- Created corresponding application status history records.
+- Verified analytics calculations using Postman.
+
+**Sample Analytics Results**
+
+| Metric | Result |
+|---|---:|
+| Total Applications | 53 |
+| Interview Applications | 12 |
+| Response Rate | 22.64% |
+| Best Day to Apply | Monday |
+
+Status distribution:
+
+| Status | Applications |
+|---|---:|
+| APPLIED | 22 |
+| PHONE_SCREEN | 10 |
+| INTERVIEW | 12 |
+| OFFER | 4 |
+| REJECTED | 5 |
+
+**7. Automated Testing**
+
+Added `tests/test_analytics_api.py`.
+
+Test coverage includes:
+- Total application count.
+- Response rate calculation.
+- Average days per status.
+- Status distribution.
+- Best weekday to apply.
+- Analytics API response validation.
+
+**Final Test Results – Day 12**
+
+- Total tests passed: 101
+- Failed tests: 0
+- Execution time: 2.21 seconds
+
+**Day 12 Deliverable**
+
+Completed the application analytics API, status history tracking, analytics calculations, database migration, sample data verification, and automated testing.
+
 ---
 
 ## API Endpoints
@@ -309,6 +485,22 @@ Example:
 
 `GET /api/jobs/search?q=python&location=chennai`
 
+### CSV APIs
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/applications/export` | Export applications as CSV |
+| POST | `/applications/import` | Import applications using CSV |
+| POST | `/applications/bulk-status-update` | Update multiple application statuses |
+
+### Analytics API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/analytics` | Retrieve application analytics |
+
+All protected endpoints require JWT authentication.
+
 ---
 
 ## Project Structure
@@ -327,12 +519,15 @@ Job-Application-Tracker/
 │
 ├── migrations/
 │   └── versions/
+│       ├── 70a60851e7bc_add_application_status_history_table.py
+│       └── ...
 │
 ├── models/
 ├── schemas/
 │   └── job_suggestion.py
 │
 ├── services/
+│   ├── application_service.py
 │   ├── job_search_service.py
 │   ├── email_service.py
 │   └── scheduler_service.py
@@ -349,6 +544,8 @@ Job-Application-Tracker/
 │   ├── test_application_api.py
 │   ├── test_application_service.py
 │   ├── test_file_upload.py
+│   ├── test_csv_api.py
+│   ├── test_analytics_api.py
 │   └── test_helpers.py
 │
 ├── postman/
@@ -487,6 +684,36 @@ Configure the PostgreSQL connection according to the database settings used by t
 
 ---
 
+## Running the Application
+
+Start the required Docker services:
+
+```bash
+docker compose up -d
+```
+
+Apply database migrations:
+
+```bash
+flask --app app db upgrade
+```
+
+Run the Flask application:
+
+```bash
+python app.py
+```
+
+Open the API:
+
+`http://127.0.0.1:5000`
+
+Swagger documentation:
+
+`http://127.0.0.1:5000/openapi/swagger`
+
+---
+
 ## Email Notification System
 
 ### Weekly Digest
@@ -534,89 +761,42 @@ Run authentication tests:
 pytest tests/test_auth.py -v
 ```
 
-### Latest Test Results – Day 10
+Run CSV API tests:
+
+```bash
+pytest tests/test_csv_api.py -v
+```
+
+Run analytics API tests:
+
+```bash
+pytest tests/test_analytics_api.py -v
+```
+
+### Latest Test Results – Day 12
 
 | Metric | Result |
 |---|---:|
-| Total Tests Passed | 92 |
+| Total Tests Passed | 101 |
 | Tests Failed | 0 |
-| Execution Time | 1.74 seconds |
-| Weekly Digest Email | Verified |
-| Interview Reminder Email | Verified |
-| HTML Templates | Verified |
+| Execution Time | 2.21 seconds |
+| Analytics API Test | Passed |
+| CSV API Tests | Passed |
+| Authentication Tests | Passed |
+| Application API Tests | Passed |
 
 Historical Day 6 coverage:
 - Overall coverage: 84%
 - app.py coverage: 85%
 - Application Service coverage: 82%
 
-## Day 11 – CSV Import, Export and Bulk Updates
-
-### Features Implemented
-
-**1. CSV Export**
-- Export all applications belonging to the authenticated user.
-- Download application records as `job_applications.csv`.
-- Includes ID, company, role, status, applied date and notes.
-- Protects user data through JWT authentication and user-level filtering.
-
-**2. CSV Import**
-- Upload application records using a CSV file.
-- Validate required CSV headers and application fields.
-- Create new applications when ID is empty.
-- Update existing applications using their application ID.
-- Skip invalid rows without stopping the entire import.
-- Generate `import_error_log.csv` for failed rows.
-
-**3. Bulk Status Update**
-- Update multiple application statuses using a CSV file.
-- Validate application IDs and status values.
-- Support statuses: APPLIED, PHONE_SCREEN, INTERVIEW, OFFER and REJECTED.
-- Skip invalid records and generate an error log.
-
-### API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/applications/export` | Export applications as CSV |
-| POST | `/applications/import` | Import and update applications using CSV |
-| POST | `/applications/bulk-status-update` | Update multiple application statuses |
-
-All three endpoints require JWT authentication.
-
-### CSV Round-Trip Testing
-
-- Exported application records to CSV.
-- Edited three application records.
-- Re-imported the modified CSV.
-- Verified updated roles and statuses through the applications API.
-- Confirmed that existing records were updated without creating duplicates.
-- Tested invalid rows and error log generation.
-
-### Automated Testing
-
-Added `tests/test_csv_api.py` with 8 automated tests covering:
-- CSV export and user data isolation.
-- CSV import create and update operations.
-- Invalid row handling and error logs.
-- Missing header validation.
-- Bulk status update success and failure cases.
-
-**Test Results:**
-- Total tests: 100 passed
-- Failed tests: 0
-- Application code coverage: 81%
-
-### Day 11 Deliverable
-
-Completed CSV export/import round-trip, validation, error reporting and bulk status updates with successful manual and automated testing.
-
+Day 11 application code coverage: 81%.
 
 ---
 
 ## Current Project Status
 
-**Completed Development: Day 1 – Day 10**
+**Completed Development: Day 1 – Day 12**
 
 ### Major Features Completed
 
@@ -635,6 +815,13 @@ Completed CSV export/import round-trip, validation, error reporting and bulk sta
 - Pydantic DTO validation.
 - Redis caching.
 - Docker-based PostgreSQL and Redis services.
+- CSV import and export.
+- Bulk application status updates.
+- Application status history tracking.
+- Application analytics API.
+- Response rate calculation.
+- Time-in-stage analysis.
+- Best weekday to apply analysis.
 - Pytest automated testing.
 - GitHub Actions CI.
 - Flask-Mail SMTP integration.
@@ -644,9 +831,15 @@ Completed CSV export/import round-trip, validation, error reporting and bulk sta
 - Jinja2 HTML email templates.
 - APScheduler background jobs.
 
-### Latest Test Execution
+### Latest Project Verification
 
-**92 Passed | 0 Failed**
+**101 Tests Passed | 0 Failed**
+
+### Latest GitHub Commit
+
+- Commit ID: `c7cefcd`
+- Commit Message: `Complete Day 12 analytics dashboard API`
+- Branch: `main`
 
 ---
 
@@ -662,4 +855,4 @@ Portfolio: https://prasanna-p.vercel.app/
 
 ---
 
-Developed as a hands-on Python Flask SaaS project, focusing on backend development, REST API design, database management, authentication, external API integration, caching, email automation, automated testing, and CI/CD.
+Developed as a hands-on Python Flask SaaS project, focusing on backend development, REST API design, database management, authentication, external API integration, caching, email automation, analytics, automated testing, and CI/CD.
