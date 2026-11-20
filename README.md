@@ -1,4 +1,4 @@
-# Job Application Tracker SaaS
+﻿# Job Application Tracker SaaS
 
 A Flask-based Job Application Tracker SaaS that helps users manage job applications, monitor application progress, upload resumes, extract skills from PDF resumes, discover external job opportunities, analyze application performance, and schedule interview reminders.
 
@@ -122,7 +122,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 
 ## Project Development Progress
 
-### Day 1 – Project Setup and Architecture
+### Day 1 â€“ Project Setup and Architecture
 
 - Planned the Job Application Tracker SaaS.
 - Identified application requirements and features.
@@ -132,7 +132,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - Configured PostgreSQL using Docker.
 - Initialized Git and GitHub repository.
 
-### Day 2 – Database Design and Models
+### Day 2 â€“ Database Design and Models
 
 - Integrated PostgreSQL with Flask.
 - Configured SQLAlchemy ORM.
@@ -142,7 +142,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - Implemented application status using Python Enum.
 - Designed user and application relationships.
 
-### Day 3 – REST API Development
+### Day 3 â€“ REST API Development
 
 - Implemented RESTful APIs.
 - Developed application CRUD operations.
@@ -151,7 +151,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - Implemented structured error handling.
 - Added user management endpoints.
 
-### Day 4 – Resume Upload and PDF Processing
+### Day 4 â€“ Resume Upload and PDF Processing
 
 - Implemented PDF resume upload.
 - Added file type and PDF signature validation.
@@ -161,7 +161,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - Developed basic resume skill extraction.
 - Created resume-related API endpoints.
 
-### Day 5 – Service Layer and Business Logic
+### Day 5 â€“ Service Layer and Business Logic
 
 - Created ApplicationService.
 - Separated business logic from API routes.
@@ -171,7 +171,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
   - DuplicateApplication
 - Improved error handling and code organization.
 
-### Day 6 – Pytest and GitHub Actions CI
+### Day 6 â€“ Pytest and GitHub Actions CI
 
 - Configured Pytest.
 - Created reusable test fixtures.
@@ -183,7 +183,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - Successfully passed 83 tests.
 - Achieved 84% overall test coverage.
 
-### Day 7 – JWT Authentication and Advanced Testing
+### Day 7 â€“ JWT Authentication and Advanced Testing
 
 - Integrated Flask-JWT-Extended.
 - Implemented user registration and login.
@@ -194,7 +194,7 @@ The application provides secure JWT authentication, RESTful APIs, PostgreSQL int
 - Protected application API routes.
 - Created authentication test cases.
 
-### Day 8 – REST API Enhancement and Swagger Documentation
+### Day 8 â€“ REST API Enhancement and Swagger Documentation
 
 - Integrated Flask-OpenAPI3.
 - Configured Swagger UI.
@@ -209,7 +209,7 @@ Swagger UI:
 
 `http://127.0.0.1:5000/openapi/swagger`
 
-### Day 9 – External Job Search API and Redis Caching
+### Day 9 â€“ External Job Search API and Redis Caching
 
 **Adzuna API Integration**
 
@@ -237,7 +237,7 @@ Cache verification:
 - First request: `source: adzuna_api`
 - Subsequent request: `source: cache`
 
-### Day 10 – Email Notifications and Interview Reminders
+### Day 10 â€“ Email Notifications and Interview Reminders
 
 **Flask-Mail and SMTP Integration**
 
@@ -285,7 +285,7 @@ Integrated APScheduler for:
 - Verified dynamic email content and HTML formatting.
 - Existing automated test suite passed: 92 tests.
 
-### Day 11 – CSV Import, Export and Bulk Updates
+### Day 11 â€“ CSV Import, Export and Bulk Updates
 
 **1. CSV Export**
 
@@ -341,7 +341,7 @@ Added `tests/test_csv_api.py` with 8 automated tests covering:
 - Failed tests: 0
 - Application code coverage: 81%
 
-### Day 12 – Analytics Dashboard Backend
+### Day 12 â€“ Analytics Dashboard Backend
 
 **1. Application Status History**
 
@@ -362,7 +362,7 @@ Migration:
 
 Implemented response rate calculation:
 
-`Response Rate = (Interview Applications / Total Applications) × 100`
+`Response Rate = (Interview Applications / Total Applications) Ã— 100`
 
 The API calculates the percentage of applications that reached the INTERVIEW status.
 
@@ -433,7 +433,7 @@ Test coverage includes:
 - Best weekday to apply.
 - Analytics API response validation.
 
-**Final Test Results – Day 12**
+**Final Test Results â€“ Day 12**
 
 - Total tests passed: 101
 - Failed tests: 0
@@ -507,57 +507,57 @@ All protected endpoints require JWT authentication.
 
 ```text
 Job-Application-Tracker/
-│
-├── .github/
-│   └── workflows/
-│       └── tests.yml
-│
-├── api/
-├── auth/
-│   ├── __init__.py
-│   └── routes.py
-│
-├── migrations/
-│   └── versions/
-│       ├── 70a60851e7bc_add_application_status_history_table.py
-│       └── ...
-│
-├── models/
-├── schemas/
-│   └── job_suggestion.py
-│
-├── services/
-│   ├── application_service.py
-│   ├── job_search_service.py
-│   ├── email_service.py
-│   └── scheduler_service.py
-│
-├── templates/
-│   └── emails/
-│       ├── weekly_digest.html
-│       └── interview_reminder.html
-│
-├── tests/
-│   ├── conftest.py
-│   ├── factories.py
-│   ├── test_auth.py
-│   ├── test_application_api.py
-│   ├── test_application_service.py
-│   ├── test_file_upload.py
-│   ├── test_csv_api.py
-│   ├── test_analytics_api.py
-│   └── test_helpers.py
-│
-├── postman/
-├── uploads/
-│
-├── app.py
-├── seed.py
-├── docker-compose.yml
-├── requirements.txt
-├── .coveragerc
-├── .gitignore
-└── README.md
+â”‚
+â”œâ”€â”€ .github/
+â”‚   â””â”€â”€ workflows/
+â”‚       â””â”€â”€ tests.yml
+â”‚
+â”œâ”€â”€ api/
+â”œâ”€â”€ auth/
+â”‚   â”œâ”€â”€ __init__.py
+â”‚   â””â”€â”€ routes.py
+â”‚
+â”œâ”€â”€ migrations/
+â”‚   â””â”€â”€ versions/
+â”‚       â”œâ”€â”€ 70a60851e7bc_add_application_status_history_table.py
+â”‚       â””â”€â”€ ...
+â”‚
+â”œâ”€â”€ models/
+â”œâ”€â”€ schemas/
+â”‚   â””â”€â”€ job_suggestion.py
+â”‚
+â”œâ”€â”€ services/
+â”‚   â”œâ”€â”€ application_service.py
+â”‚   â”œâ”€â”€ job_search_service.py
+â”‚   â”œâ”€â”€ email_service.py
+â”‚   â””â”€â”€ scheduler_service.py
+â”‚
+â”œâ”€â”€ templates/
+â”‚   â””â”€â”€ emails/
+â”‚       â”œâ”€â”€ weekly_digest.html
+â”‚       â””â”€â”€ interview_reminder.html
+â”‚
+â”œâ”€â”€ tests/
+â”‚   â”œâ”€â”€ conftest.py
+â”‚   â”œâ”€â”€ factories.py
+â”‚   â”œâ”€â”€ test_auth.py
+â”‚   â”œâ”€â”€ test_application_api.py
+â”‚   â”œâ”€â”€ test_application_service.py
+â”‚   â”œâ”€â”€ test_file_upload.py
+â”‚   â”œâ”€â”€ test_csv_api.py
+â”‚   â”œâ”€â”€ test_analytics_api.py
+â”‚   â””â”€â”€ test_helpers.py
+â”‚
+â”œâ”€â”€ postman/
+â”œâ”€â”€ uploads/
+â”‚
+â”œâ”€â”€ app.py
+â”œâ”€â”€ seed.py
+â”œâ”€â”€ docker-compose.yml
+â”œâ”€â”€ requirements.txt
+â”œâ”€â”€ .coveragerc
+â”œâ”€â”€ .gitignore
+â””â”€â”€ README.md
 ```
 
 ---
@@ -773,7 +773,7 @@ Run analytics API tests:
 pytest tests/test_analytics_api.py -v
 ```
 
-### Latest Test Results – Day 12
+### Latest Test Results â€“ Day 12
 
 | Metric | Result |
 |---|---:|
@@ -796,7 +796,7 @@ Day 11 application code coverage: 81%.
 
 ## Current Project Status
 
-**Completed Development: Day 1 – Day 12**
+**Completed Development: Day 1 - Day 13**
 
 ### Major Features Completed
 
@@ -833,7 +833,7 @@ Day 11 application code coverage: 81%.
 
 ### Latest Project Verification
 
-**101 Tests Passed | 0 Failed**
+**109 Tests Passed | 0 Failed**
 
 ### Latest GitHub Commit
 
@@ -856,3 +856,59 @@ Portfolio: https://prasanna-p.vercel.app/
 ---
 
 Developed as a hands-on Python Flask SaaS project, focusing on backend development, REST API design, database management, authentication, external API integration, caching, email automation, analytics, automated testing, and CI/CD.
+
+
+## Day 13 - Admin API & Role Management
+
+### Features Implemented
+
+**1. User Role Management**
+- Added USER and ADMIN roles to the User model.
+- Created and applied database migrations for user roles and audit logs.
+- Assigned ADMIN privileges to the administrator account.
+
+**2. Admin Authorization**
+- Implemented the `@admin_required` decorator.
+- Protected administrator-only endpoints using JWT authentication and role verification.
+- Restricted `GET /users` to administrators.
+
+**3. Admin User Management**
+- Implemented administrator user deletion.
+- Prevented administrators from deleting their own accounts.
+- Prevented deletion of the last administrator.
+- Implemented user impersonation with dedicated JWT claims.
+
+### Admin API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/users` | List all users (Admin only) |
+| DELETE | `/admin/users/<user_id>` | Delete a user (Admin only) |
+| POST | `/admin/users/<user_id>/impersonate` | Impersonate a user (Admin only) |
+
+### Audit Logging
+
+- Created the `AuditLog` model and `record_audit()` helper.
+- Recorded user deletion and impersonation actions.
+- Stored administrator, target user, action and timestamp details.
+- Preserved audit records after user deletion.
+
+### Automated Testing
+
+Added `tests/test_admin_api.py` with 7 tests covering:
+- Admin authorization.
+- User deletion and related record cleanup.
+- Self-deletion prevention.
+- Missing user handling.
+- User impersonation.
+- Impersonation authorization restrictions.
+- Audit log verification.
+
+**Day 13 Full Test Results:**
+- 109 tests passed.
+- 0 tests failed.
+
+### Day 13 Deliverable
+
+Completed administrator role management, secured admin APIs, user impersonation, account deletion and audit logging.
+

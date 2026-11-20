@@ -67,6 +67,27 @@ def auth_user(db, factories):
 
     return user
 
+@pytest.fixture
+def admin_user(db, factories):
+    admin = factories["user"].create(
+        role=app_module.Role.ADMIN
+    )
+    db.session.flush()
+
+    return admin
+
+
+@pytest.fixture
+def admin_headers(app, admin_user):
+    with app.app_context():
+        access_token = create_access_token(
+            identity=str(admin_user.id)
+        )
+
+    return {
+        "Authorization": f"Bearer {access_token}"
+    }
+
 
 @pytest.fixture
 def auth_headers(app, auth_user):

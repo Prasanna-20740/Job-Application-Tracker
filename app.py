@@ -13,6 +13,7 @@ from flask_caching import Cache
 from services.job_search_service import job_search_service
 from schemas.job_suggestion import JobSuggestion
 from flask_mail import Mail, Message
+from functools import wraps
 
 load_dotenv()
 
@@ -156,6 +157,9 @@ class ApplicationStatus(Enum):
     OFFER = "OFFER"
     REJECTED = "REJECTED"
 
+class Role(Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
 
 # --------------------------------------------------
 # User Model
@@ -181,6 +185,12 @@ class User(db.Model):
     password_hash = db.Column(
         db.String(255),
         nullable=True
+    )
+
+    role = db.Column(
+    db.Enum(Role, name="user_role"),
+    nullable=False,
+    default=Role.USER
     )
 
     applications = db.relationship(
@@ -220,6 +230,72 @@ class TokenBlocklist(db.Model):
         default=datetime.utcnow
     )
 
+# --------------------------------------------------
+# Audit Log Model
+# --------------------------------------------------
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    actor_user_id = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    actor_username = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    action = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    target_user_id = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    target_username = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
+    details = db.Column(
+        db.JSON,
+        nullable=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+
+def record_audit(
+    actor,
+    action,
+    target=None,
+    details=None
+):
+    audit = AuditLog(
+        actor_user_id=actor.id,
+        actor_username=actor.username,
+        action=action,
+        target_user_id=target.id if target else None,
+        target_username=target.username if target else None,
+        details=details
+    )
+
+    db.session.add(audit)
+  
 # --------------------------------------------------
 # Job Application Model
 # --------------------------------------------------
@@ -397,6 +473,37 @@ def check_if_token_revoked(jwt_header, jwt_payload):
     ).scalar()
 
     return token is not None
+# --------------------------------------------------
+# Admin Authorization Decorator
+# --------------------------------------------------
+
+def admin_required(fn):
+    @wraps(fn)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+
+        try:
+            current_user_id = int(get_jwt_identity())
+        except (TypeError, ValueError):
+            return jsonify({
+                "error": "Invalid user identity"
+            }), 401
+
+        current_user = db.session.get(User, current_user_id)
+
+        if current_user is None:
+            return jsonify({
+                "error": "User not found"
+            }), 404
+
+        if current_user.role != Role.ADMIN:
+            return jsonify({
+                "error": "Admin access required"
+            }), 403
+
+        return fn(*args, **kwargs)
+
+    return decorated_function
 
 # --------------------------------------------------
 # Helper Functions
@@ -878,7 +985,7 @@ def create_user():
 # --------------------------------------------------
 
 @app.route("/users", methods=["GET"])
-@jwt_required()
+@admin_required
 def get_users():
 
     users = User.query.order_by(User.id).all()
@@ -890,6 +997,165 @@ def get_users():
     ]), 200
 
 
+# --------------------------------------------------
+# Admin Delete User API
+# --------------------------------------------------
+
+@app.route("/admin/users/<int:user_id>", methods=["DELETE"])
+@admin_required
+def admin_delete_user(user_id):
+
+    try:
+        # Get logged-in admin
+        admin_id = int(get_jwt_identity())
+        admin = db.session.get(User, admin_id)
+
+        # Prevent admin from deleting own account
+        if admin_id == user_id:
+            return jsonify({
+                "error": "You cannot delete your own account"
+            }), 400
+
+        # Find target user
+        target_user = db.session.get(User, user_id)
+
+        if target_user is None:
+            return jsonify({
+                "error": "User not found"
+            }), 404
+
+        # Prevent deletion of the last admin
+        if target_user.role == Role.ADMIN:
+            admin_count = User.query.filter_by(
+                role=Role.ADMIN
+            ).count()
+
+            if admin_count <= 1:
+                return jsonify({
+                    "error": "Cannot delete the last admin"
+                }), 400
+
+        # Find target user's applications
+        applications = JobApplication.query.filter_by(
+            user_id=user_id
+        ).all()
+
+        application_ids = [
+            application.id for application in applications
+        ]
+
+        # Delete related interviews and status history
+        if application_ids:
+
+            Interview.query.filter(
+                Interview.application_id.in_(application_ids)
+            ).delete(synchronize_session=False)
+
+            ApplicationStatusHistory.query.filter(
+                ApplicationStatusHistory.application_id.in_(
+                    application_ids
+                )
+            ).delete(synchronize_session=False)
+
+        # Delete applications
+        for application in applications:
+            db.session.delete(application)
+
+        # Record audit log before deleting user
+        record_audit(
+            actor=admin,
+            action="DELETE_USER",
+            target=target_user,
+            details={
+                "deleted_applications": len(applications)
+            }
+        )
+
+        # Delete user
+        db.session.delete(target_user)
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "User deleted successfully",
+            "deleted_user_id": user_id,
+            "deleted_applications": len(applications)
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        logger.exception("Admin user deletion failed")
+
+        return jsonify({
+            "error": "Failed to delete user"
+        }), 500
+
+
+# --------------------------------------------------
+# Admin Impersonate User API
+# --------------------------------------------------
+
+@app.route(
+    "/admin/users/<int:user_id>/impersonate",
+    methods=["POST"]
+)
+@admin_required
+def admin_impersonate_user(user_id):
+
+    try:
+        # Get logged-in admin
+        admin_id = int(get_jwt_identity())
+        admin = db.session.get(User, admin_id)
+
+        # Find target user
+        target_user = db.session.get(User, user_id)
+
+        if target_user is None:
+            return jsonify({
+                "error": "User not found"
+            }), 404
+
+        # Prevent impersonating another admin
+        if target_user.role == Role.ADMIN:
+            return jsonify({
+                "error": "Cannot impersonate another admin"
+            }), 403
+
+        # Create access token for target user
+        impersonation_token = create_access_token(
+            identity=str(target_user.id),
+            additional_claims={
+                "is_impersonation": True,
+                "impersonated_by": admin.id
+            }
+        )
+
+        # Record audit log
+        record_audit(
+            actor=admin,
+            action="IMPERSONATE_USER",
+            target=target_user,
+            details={
+                "impersonation": True
+            }
+        )
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "User impersonation started",
+            "access_token": impersonation_token,
+            "user": target_user.to_dict(),
+            "is_impersonation": True
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        logger.exception("Admin impersonation failed")
+
+        return jsonify({
+            "error": "Failed to impersonate user"
+        }), 500
 
 # --------------------------------------------------
 # Get All Applications API (Paginated + Filterable)

@@ -46,16 +46,19 @@ def test_create_duplicate_user(client):
     assert response.status_code == 409
 
 
-def test_get_users(client):
+def test_get_users(client, admin_headers):
     client.post("/users", json={
         "username": "user1",
         "email": "user1@example.com"
     })
 
-    response = client.get("/users")
+    response = client.get(
+        "/users",
+        headers=admin_headers
+    )
 
     assert response.status_code == 200
-    assert len(response.json) == 2
+    assert len(response.json) == 3
 
     usernames = [
         user["username"]
@@ -64,6 +67,11 @@ def test_get_users(client):
 
     assert "user1" in usernames
 
+def test_normal_user_cannot_get_users(client):
+    response = client.get("/users")
+
+    assert response.status_code == 403
+    assert response.json["error"] == "Admin access required"
 
 def test_create_application(client):
     response = client.post("/applications", json={
