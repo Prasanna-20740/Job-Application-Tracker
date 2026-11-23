@@ -912,3 +912,54 @@ Added `tests/test_admin_api.py` with 7 tests covering:
 
 Completed administrator role management, secured admin APIs, user impersonation, account deletion and audit logging.
 
+
+## Day 14 – Webhooks & Integrations
+
+### Features Implemented
+
+**1. Outbound Webhooks**
+- Triggered webhook events when an application status changes.
+- Stored webhook delivery details in the database.
+
+**2. HMAC Security**
+- Implemented HMAC-SHA256 signature generation.
+- Added signature verification to validate webhook messages.
+- Rejected invalid signatures.
+
+**3. Slack Integration**
+- Integrated Slack using Incoming Webhooks.
+- Automatically sends a Slack notification when an application status changes to OFFER.
+
+**4. Retry Mechanism**
+- Implemented automatic retries for failed webhook deliveries.
+- Configured a maximum of 3 retries.
+- Marks delivery as FAILED after all retry attempts fail.
+
+**5. Background Scheduler**
+- Integrated APScheduler to process pending webhook deliveries automatically.
+- Runs webhook delivery processing in the background.
+
+**6. Webhook Delivery Tracking**
+- Created the `WebhookDelivery` database model.
+- Tracks PENDING, PROCESSING, DELIVERED and FAILED statuses.
+- Stores delivery attempts and error details.
+
+### Automated Testing
+
+Added `tests/test_webhook_service.py` with 10 tests covering:
+- HMAC signature generation.
+- Valid and invalid signature verification.
+- Webhook event creation.
+- Slack notification queueing.
+- Successful webhook delivery.
+- Failed delivery and retry scheduling.
+- Maximum retry limit.
+
+**Day 14 Full Test Results:**
+- 119 tests passed.
+- 0 tests failed.
+
+### Day 14 Deliverable
+
+Completed webhook integration, HMAC security, Slack notifications, automatic retry handling, background scheduling and webhook delivery tracking.
+

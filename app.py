@@ -460,6 +460,70 @@ class ApplicationStatusHistory(db.Model):
         backref=db.backref("status_history", lazy=True)
     )
  
+
+# --------------------------------------------------
+# Webhook Delivery Model
+# --------------------------------------------------
+
+class WebhookDelivery(db.Model):
+    __tablename__ = "webhook_deliveries"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    event_type = db.Column(
+        db.String(100),
+        nullable=False,
+        index=True
+    )
+
+    payload = db.Column(
+        db.JSON,
+        nullable=False
+    )
+
+    target_url = db.Column(
+        db.String(1000),
+        nullable=False
+    )
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="PENDING",
+        index=True
+    )
+
+    attempt_count = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0
+    )
+
+    next_retry_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    last_error = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    delivered_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+
 # --------------------------------------------------
 # JWT Token Blocklist Callback
 # --------------------------------------------------
@@ -706,7 +770,8 @@ application_service = ApplicationService(
     db,
     JobApplication,
     ApplicationStatus,
-    ApplicationStatusHistory
+    ApplicationStatusHistory,
+    WebhookDelivery
 )
 
 

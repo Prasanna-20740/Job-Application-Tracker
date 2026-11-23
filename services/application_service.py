@@ -1,6 +1,7 @@
 
 from datetime import date, datetime
 import logging
+from services.webhook_service import queue_application_status_change
 
 # Logger setup
 logger = logging.getLogger(__name__)
@@ -25,12 +26,14 @@ class ApplicationService:
         db,
         JobApplication,
         ApplicationStatus,
-        ApplicationStatusHistory=None
+        ApplicationStatusHistory=None,
+        WebhookDelivery=None
     ):
         self.db = db
         self.JobApplication = JobApplication
         self.ApplicationStatus = ApplicationStatus
         self.ApplicationStatusHistory = ApplicationStatusHistory
+        self.WebhookDelivery = WebhookDelivery
 
     # 1. Create Application
     def create_application(
@@ -213,6 +216,21 @@ class ApplicationService:
 
                     application.status = new_status
 
+            # Queue webhook events in the same database transaction
+            # Queue webhook events only when application status changes
+            if (
+                "status" in data
+                and new_status != old_status
+                and self.WebhookDelivery
+            ):
+                 queue_application_status_change(
+                      self.db,
+                      self.WebhookDelivery,
+                      application,
+                      old_status,
+                      new_status
+                 )
+
             # Update notes
             if "notes" in data:
                 notes = data["notes"]
@@ -260,7 +278,7 @@ class ApplicationService:
             logger.exception("Failed to update application")
             raise
 
-        # 4. Delete Application
+    # 4. Delete Application
     def delete_application(self, application_id):
         try:
             application = self.get_application(application_id)

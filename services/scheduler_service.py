@@ -50,6 +50,25 @@ def run_weekly_digest():
         )
 
 
+def process_webhook_deliveries():
+    """Process queued outbound webhooks and Slack notifications."""
+
+    from services.webhook_service import deliver_pending_webhooks
+
+    with scheduler.app.app_context():
+        try:
+            deliver_pending_webhooks()
+
+        except Exception:
+            from app import db
+
+            db.session.rollback()
+
+            scheduler.app.logger.exception(
+                "Webhook delivery worker failed"
+            )
+
+
 def start_scheduler(app):
     scheduler.app = app
 
@@ -61,7 +80,9 @@ def start_scheduler(app):
             func=check_upcoming_interviews,
             trigger="interval",
             minutes=5,
-            replace_existing=True
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True
         )
 
         # Send weekly digest every Monday at 9 AM
@@ -72,9 +93,24 @@ def start_scheduler(app):
             day_of_week="mon",
             hour=9,
             minute=0,
-            replace_existing=True
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True
+        )
+
+        # Process pending webhooks every 1 second
+        scheduler.add_job(
+            id="webhook_delivery_job",
+            func=process_webhook_deliveries,
+            trigger="interval",
+            seconds=1,
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True
         )
 
         scheduler.start()
 
-        app.logger.info("Interview and weekly digest scheduler started")
+        app.logger.info(
+            "Interview, weekly digest and webhook schedulers started"
+        )
