@@ -14,7 +14,7 @@ The application follows a modular backend architecture and includes secure authe
 - Features
 - Technology Stack
 - Project Development Progress
-  - Day 1 – Day 15
+- Day 1 – Day 15
 - API Endpoints
 - Project Structure
 - Installation and Setup
