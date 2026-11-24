@@ -6,7 +6,8 @@ from marshmallow import (
     fields,
     validate,
     validates,
-    ValidationError
+    ValidationError,
+    pre_load
 )
 
 
@@ -49,3 +50,15 @@ class ApplicationSchema(Schema):
             raise ValidationError(
                 "Applied date cannot be in the future."
             )
+
+        @pre_load
+        def sanitize_notes_input(self, data, **kwargs):
+            if isinstance(data, dict):
+                data = dict(data)
+
+                notes = data.get("notes")
+
+                if isinstance(notes, str):
+                    data["notes"] = sanitize_notes(notes)
+
+            return data

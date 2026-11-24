@@ -10,10 +10,15 @@ import io
 
 from dotenv import load_dotenv
 from flask_caching import Cache
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
+from flask_cors import CORS
 from services.job_search_service import job_search_service
 from schemas.job_suggestion import JobSuggestion
 from flask_mail import Mail, Message
 from functools import wraps
+from services.security_service import sanitize_notes
 
 load_dotenv()
 
@@ -83,6 +88,43 @@ app = OpenAPI(
 
 security = [{"BearerAuth": []}]
 
+# --------------------------------------------------
+#  Rate Limiting Configuration
+# --------------------------------------------------
+def get_rate_limit_key():
+    auth_header = request.headers.get("Authorization", "")
+    parts = auth_header.split()
+
+    if (
+        len(parts) == 2
+        and parts[0].lower() == "bearer"
+    ):
+        try:
+            payload = decode_token(parts[1])
+            user_id = payload.get("sub")
+
+            if user_id is not None:
+                return f"user:{user_id}"
+
+        except Exception:
+            pass
+
+    return f"ip:{get_remote_address()}"
+# --------------------------------------------------
+# Day 15 - Flask-Limiter Configuration
+# --------------------------------------------------
+
+limiter = Limiter(
+    key_func=get_rate_limit_key,
+    app=app,
+    default_limits=["100 per minute"],
+    storage_uri=os.getenv(
+        "RATELIMIT_STORAGE_URI",
+        "redis://localhost:6379/1"
+    ),
+    strategy="fixed-window",
+    headers_enabled=True
+)
 
 # Redis Cache Configuration
 app.config["CACHE_TYPE"] = "RedisCache"
@@ -145,6 +187,37 @@ app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 
 jwt = JWTManager(app)
 
+# --------------------------------------------------
+#  Security Headers Configuration
+# --------------------------------------------------
+
+Talisman(
+    app,
+    force_https=False,
+    frame_options="DENY",
+    referrer_policy="strict-origin-when-cross-origin",
+    content_security_policy=None
+)
+
+# --------------------------------------------------
+# CORS Configuration
+# --------------------------------------------------
+
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": ["http://localhost:3000"]
+        }
+    },
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    expose_headers=[
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "Retry-After"
+    ]
+)
 
 # --------------------------------------------------
 # Application Status Enum
@@ -619,9 +692,7 @@ def parse_application_data(data, creating=False):
         if notes is not None and not isinstance(notes, str):
             raise ValueError("Notes must be a string or null")
 
-        parsed["notes"] = (
-            notes.strip() if isinstance(notes, str) else None
-        )
+        parsed["notes"] = sanitize_notes(notes)
 
     if "status" in data:
         status = data["status"]

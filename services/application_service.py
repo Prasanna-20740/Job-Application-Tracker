@@ -2,6 +2,7 @@
 from datetime import date, datetime
 import logging
 from services.webhook_service import queue_application_status_change
+from services.security_service import sanitize_notes
 
 # Logger setup
 logger = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ class ApplicationService:
                 company=company,
                 role=role,
                 status=application_status,
-                notes=notes,
+                notes=sanitize_notes(notes),
                 applied_date=applied_date or date.today(),
                 user_id=user_id
             )
@@ -231,14 +232,9 @@ class ApplicationService:
                       new_status
                  )
 
-            # Update notes
+            # Update notes with XSS sanitisation
             if "notes" in data:
-                notes = data["notes"]
-
-                if notes is not None and not isinstance(notes, str):
-                    raise ValueError("Notes must be a string")
-
-                application.notes = notes
+                application.notes = sanitize_notes(data["notes"])
 
             # Update applied date
             if "applied_date" in data:
