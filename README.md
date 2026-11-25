@@ -963,3 +963,87 @@ Added `tests/test_webhook_service.py` with 10 tests covering:
 
 Completed webhook integration, HMAC security, Slack notifications, automatic retry handling, background scheduling and webhook delivery tracking.
 
+
+## Day 15 – API Security & Rate Limiting
+
+### Features Implemented
+
+**1. Rate Limiting**
+- Integrated Flask-Limiter for API request rate limiting.
+- Configured Redis as the rate-limit storage backend.
+- Added request limits to protect API endpoints from excessive requests.
+
+**2. Security Headers**
+- Integrated Flask-Talisman.
+- Configured HTTP security headers to improve application security.
+
+**3. HTML Sanitization**
+- Integrated nh3 for HTML sanitization.
+- Added protection against potentially unsafe HTML content.
+
+**4. CORS Configuration**
+- Configured Cross-Origin Resource Sharing (CORS).
+- Controlled access to API resources from permitted origins.
+
+**5. Redis Integration**
+- Used Redis for rate-limit storage.
+- Verified Redis connectivity.
+
+### Day 15 Deliverable
+
+Completed API rate limiting, Redis-backed request tracking, security headers, HTML sanitization and CORS configuration.
+
+---
+
+## Day 16 – Background Jobs & Asynchronous Processing
+
+### Features Implemented
+
+**1. Celery & Redis Integration**
+- Integrated Celery for asynchronous background task processing.
+- Configured Redis as the message broker.
+- Configured Redis as the task result backend.
+- Added Flask application context support for Celery tasks.
+
+**2. Asynchronous Resume Parsing**
+- Updated the resume upload workflow to trigger background processing.
+- Implemented the `tasks.parse_resume` Celery task.
+- Extracted text from uploaded PDF resumes.
+- Automatically identified skills from extracted resume content.
+- Saved extracted resume text and skills in PostgreSQL.
+- Added resume parsing status and parsed timestamp tracking.
+
+**3. Stale Application Alerts**
+- Implemented the `tasks.send_stale_application_alerts` task.
+- Identifies applications that have not been updated for more than 14 days.
+- Sends email reminders to users with eligible stale applications.
+- Tracks alert delivery using the `stale_alert_sent_at` field.
+- Excludes applications with OFFER and REJECTED statuses.
+
+**4. Celery Beat Scheduling**
+- Configured Celery Beat for periodic background tasks.
+- Scheduled stale application alerts to run daily at 9:00 AM.
+- Configured the Asia/Kolkata timezone.
+
+**5. Flower Monitoring**
+- Integrated Flower for Celery task monitoring.
+- Monitored worker availability and task execution.
+- Verified successful background task execution through the Flower dashboard.
+
+### Day 16 Verification
+
+- Successfully uploaded a PDF resume.
+- Verified asynchronous resume parsing through Celery worker logs.
+- Confirmed task execution status as SUCCESS in Flower.
+- Verified extracted skills were saved in PostgreSQL.
+- Confirmed resume parsing status as COMPLETED.
+- Tested stale application alert task with no eligible applications.
+
+**Day 16 Test Results:**
+- 128 tests passed.
+- 0 tests failed.
+
+### Day 16 Deliverable
+
+Completed asynchronous resume parsing, Redis-backed Celery task processing, scheduled stale application email alerts and Flower-based task monitoring.
+

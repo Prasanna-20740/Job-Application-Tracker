@@ -369,6 +369,7 @@ def record_audit(
 
     db.session.add(audit)
   
+
 # --------------------------------------------------
 # Job Application Model
 # --------------------------------------------------
@@ -376,7 +377,10 @@ def record_audit(
 class JobApplication(db.Model):
     __tablename__ = "job_application"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     company = db.Column(
         db.String(150),
@@ -414,22 +418,53 @@ class JobApplication(db.Model):
         nullable=True
     )
 
+    # Resume File Path
     resume_path = db.Column(
         db.String(255),
         nullable=True
     )
 
+    # Resume Parsing Fields - Day 16
+    resume_text = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    resume_skills = db.Column(
+        db.JSON,
+        nullable=True
+    )
+
+    resume_parse_status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="NOT_STARTED",
+        server_default="NOT_STARTED"
+    )
+
+    resume_parsed_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    # Timestamps
     created_at = db.Column(
-    db.DateTime,
-    nullable=False,
-    default=datetime.utcnow
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow
     )
 
     updated_at = db.Column(
-    db.DateTime,
-    nullable=False,
-    default=datetime.utcnow,
-    onupdate=datetime.utcnow
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    # Stale Application Alert - Day 16
+    stale_alert_sent_at = db.Column(
+        db.DateTime,
+        nullable=True
     )
 
     def to_dict(self):
@@ -2286,7 +2321,7 @@ def upload_resume(application_id):
 
     try:
         current_user_id = int(get_jwt_identity())
-        
+
         application = JobApplication.query.filter_by(
             id=application_id,
             user_id=current_user_id
@@ -2339,9 +2374,15 @@ def upload_resume(application_id):
 
         old_resume_path = application.resume_path
 
-        application.resume_path = os.path.join(
+        application.resume_path = (
             f"uploads/{unique_filename}"
         )
+
+        # Reset previous parsing results.
+        application.resume_text = None
+        application.resume_skills = None
+        application.resume_parsed_at = None
+        application.resume_parse_status = "PENDING"
 
         try:
             db.session.commit()
@@ -2354,6 +2395,7 @@ def upload_resume(application_id):
 
             raise
 
+        # Delete the previous resume after successful commit.
         delete_resume_file(old_resume_path)
 
         logger.info(
@@ -2361,13 +2403,52 @@ def upload_resume(application_id):
             application_id
         )
 
+        # --------------------------------------------------
+        # Queue Asynchronous Resume Parsing
+        # --------------------------------------------------
+
+        task_id = None
+
+        try:
+            from tasks import parse_resume_task
+
+            task = parse_resume_task.delay(application_id)
+
+            task_id = task.id
+
+            logger.info(
+                "Resume parsing task queued. Task ID: %s",
+                task_id
+            )
+
+        except Exception:
+
+            logger.exception(
+                "Failed to queue resume parsing for application %s",
+                application_id
+            )
+
+            db.session.rollback()
+
+            application = JobApplication.query.get(
+                application_id
+            )
+
+            if application is not None:
+                application.resume_parse_status = "FAILED"
+                db.session.commit()
+
         return jsonify({
             "message": "Resume uploaded successfully",
             "application_id": application_id,
             "resume_path": application.resume_path,
             "file_url": (
                 f"/files/{application.resume_path}"
-            )
+            ),
+            "resume_parse_status": (
+                application.resume_parse_status
+            ),
+            "task_id": task_id
         }), 201
 
     except ApplicationNotFound as error:
@@ -2386,7 +2467,6 @@ def upload_resume(application_id):
             "details": {},
             "status_code": 500
         }), 500
-
 
 # --------------------------------------------------
 # Serve Uploaded Resume API
