@@ -456,6 +456,25 @@ Added `tests/test_webhook_service.py` with ten tests.
 - Tested allowed and blocked CORS origins.
 - Verified rate limiting: the first 100 requests succeeded and subsequent requests were rate-limited with HTTP 429.
 
+## Day 16 – Background Jobs & Asynchronous Processing
+
+### Features Implemented
+- Integrated **Celery and Redis** for asynchronous background task processing.
+- Configured **Flask Application Context** for Celery tasks.
+- Implemented background **resume PDF parsing** and skill extraction.
+- Stored extracted resume text and skills in PostgreSQL.
+- Implemented **stale application email alerts** for applications inactive for more than 14 days.
+- Prevented duplicate alerts using `stale_alert_sent_at` timestamp.
+- Excluded `OFFER` and `REJECTED` applications from stale alerts.
+- Configured **Celery Beat** for daily automated alerts at 9:00 AM (Asia/Kolkata).
+- Integrated **Flower** to monitor Celery workers and task execution.
+
+### Testing & Verification
+- Verified Redis connection and Celery worker.
+- Tested asynchronous resume parsing and stale alert tasks.
+- Monitored task execution status using Flower.
+- **128 tests passed successfully.**
+
 **Deliverable:** API rate limiting, security headers, XSS protection, restricted CORS, and security tests.
 
 ---
