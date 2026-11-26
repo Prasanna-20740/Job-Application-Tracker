@@ -2687,6 +2687,17 @@ def search_external_jobs(query: JobSearchQuery):
         return jsonify({"error": "Unable to search jobs at the moment"}), 502
 
 # --------------------------------------------------
+# API Versioning - V1 and V2
+# --------------------------------------------------
+
+from api.v1 import v1_bp
+from api.v2 import v2_bp
+
+app.register_api(v1_bp, url_prefix="/api/v1")
+app.register_api(v2_bp, url_prefix="/api/v2")
+
+
+# --------------------------------------------------
 # Run Flask Application
 # --------------------------------------------------
 
