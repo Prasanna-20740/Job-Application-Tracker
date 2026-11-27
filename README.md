@@ -1125,3 +1125,76 @@ Completed API versioning with separate V1 and V2 endpoints, V1 deprecation heade
 GitHub: https://github.com/Prasanna-20740
 
 
+
+---
+
+## Day 18 - API & Web Performance Optimization
+
+### Features Implemented
+
+**1. SQL Query Optimization**
+- Optimized `GET /api/analytics` using SQL-level aggregation.
+- Used GROUP BY and COUNT() for application status distribution.
+- Used AVG() for average application duration.
+- Used database-level date aggregation for weekday application counts.
+- Reduced unnecessary ORM object loading and Python-side processing.
+
+**2. Composite Database Index**
+- Added composite index `ix_job_application_user_status_applied_date`.
+- Indexed columns: `user_id`, `status`, and `applied_date`.
+- Created and applied Alembic migration.
+- Verified index creation in PostgreSQL.
+
+**3. Redis Analytics Caching**
+- Implemented Redis cache HIT and MISS handling.
+- Configured a 300-second (5-minute) cache TTL.
+- Added cache invalidation when applications are created, updated, or deleted.
+
+**4. Database Query Profiling**
+- Measured SQL query count and execution time.
+- Captured executed SQL statements.
+- Separated analytics aggregation queries from JWT blocklist queries.
+
+**5. Performance Benchmarking**
+- Created `scripts/benchmark_analytics.py`.
+- Generated 10,000 temporary applications and 10,000 history records.
+- Benchmarked cache MISS and cache HIT response times.
+- Added automatic benchmark data cleanup.
+
+### Day 18 Performance Results
+
+| Metric | Result |
+|---|---:|
+| Benchmark applications | 10,000 |
+| Benchmark history records | 10,000 |
+| Cache MISS response time | 93.72 ms |
+| Cache HIT average | 6.64 ms |
+| Cache HIT minimum | 5.06 ms |
+| Cache HIT maximum | 10.07 ms |
+| SQL queries during profiling | 9 |
+| Total SQL execution time | 58.52 ms |
+
+**SQL Query Profile:**
+- 3 analytics aggregation queries during cache MISS.
+- 6 JWT blocklist queries across 6 benchmark requests.
+- Analytics aggregation queries were skipped on cache HIT requests.
+
+### Day 18 Verification
+
+- Verified analytics status distribution and average duration.
+- Verified weekday application counts.
+- Tested Redis cache HIT and MISS behavior.
+- Verified cache invalidation.
+- Confirmed PostgreSQL composite index.
+- Confirmed Alembic migration head.
+- Successfully completed 10,000-record benchmark.
+- Confirmed benchmark data cleanup.
+
+**Day 18 Test Results:**
+- 135 tests passed.
+- 0 tests failed.
+- Execution time: 3.15 seconds.
+
+### Day 18 Deliverable
+
+Completed SQL analytics optimization, PostgreSQL composite indexing, Redis caching, SQL query profiling, and 10,000-record performance benchmarking.

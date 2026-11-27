@@ -368,7 +368,7 @@ def record_audit(
     )
 
     db.session.add(audit)
-  
+
 
 # --------------------------------------------------
 # Job Application Model
@@ -376,6 +376,15 @@ def record_audit(
 
 class JobApplication(db.Model):
     __tablename__ = "job_application"
+
+    __table_args__ = (
+        db.Index(
+            "ix_job_application_user_status_applied_date",
+            "user_id",
+            "status",
+            "applied_date"
+        ),
+    )
 
     id = db.Column(
         db.Integer,
@@ -567,7 +576,7 @@ class ApplicationStatusHistory(db.Model):
         "JobApplication",
         backref=db.backref("status_history", lazy=True)
     )
- 
+
 
 # --------------------------------------------------
 # Webhook Delivery Model
@@ -656,6 +665,7 @@ def admin_required(fn):
 
         try:
             current_user_id = int(get_jwt_identity())
+
         except (TypeError, ValueError):
             return jsonify({
                 "error": "Invalid user identity"
@@ -1070,7 +1080,7 @@ class ApplicationQuery(BaseModel):
     page: int = Field(default=1, ge=1)
     per_page: int = Field(default=10, ge=1, le=100)
     status: str | None = None
-    
+
 class ApplicationPath(BaseModel):
     application_id: int = Field(gt=0)
     page: int = Field(default=1, ge=1)
@@ -1084,7 +1094,7 @@ class ApplicationCreate(BaseModel):
     status: str = "APPLIED"
     applied_date: date | None = None
     notes: str | None = None
-    
+
 # --------------------------------------------------
 # Create User API
 # --------------------------------------------------
@@ -1514,7 +1524,7 @@ def import_applications():
 
                     parsed = ApplicationSchema().load(data)
 
-                    
+
                     if application:
                         application.company = parsed["company"]
                         application.role = parsed["role"]
@@ -1716,7 +1726,7 @@ def bulk_status_update():
                             "Application not found or access denied"
                         )
 
-                    
+
                     new_status = ApplicationStatus(status_value)
                     old_status = application.status
 
@@ -1840,7 +1850,10 @@ def create_application(body: ApplicationCreate):
               notes=parsed.get("notes"),
               applied_date=parsed.get("applied_date"),
               user_id=current_user_id
+
          )
+        # Invalidate analytics cache after creating application
+        cache.delete(f"analytics:user:{current_user_id}")
 
         return jsonify({
             "message": "Application created successfully",
@@ -1921,92 +1934,168 @@ def application_analytics():
     try:
         current_user_id = int(get_jwt_identity())
 
-        # 1. Get all applications of the logged-in user
-        applications = JobApplication.query.filter_by(
-            user_id=current_user_id
-        ).all()
+        cache_key = f"analytics:user:{current_user_id}"
+        cached_analytics = cache.get(cache_key)
 
-        total_applications = len(applications)
+        if cached_analytics is not None:
+            logger.info("Analytics cache HIT for user %s", current_user_id)
+            return jsonify(cached_analytics), 200
 
-        # 2. Calculate response rate
-        interview_count = sum(
-            1 for application in applications
-            if application.status == ApplicationStatus.INTERVIEW
+        logger.info("Analytics cache MISS for user %s", current_user_id)
+
+        # 1. Status counts using SQL GROUP BY
+        status_rows = (
+            db.session.query(
+                JobApplication.status,
+                db.func.count(JobApplication.id)
+            )
+            .filter(JobApplication.user_id == current_user_id)
+            .group_by(JobApplication.status)
+            .all()
         )
+
+        status_distribution = {
+            status.value: count
+            for status, count in status_rows
+        }
+
+        for status in ApplicationStatus:
+            status_distribution.setdefault(status.value, 0)
+
+        total_applications = sum(status_distribution.values())
+
+        interview_count = status_distribution[
+            ApplicationStatus.INTERVIEW.value
+        ]
 
         response_rate = (
             (interview_count / total_applications) * 100
             if total_applications > 0 else 0
         )
 
-        # 3. Calculate status distribution
-        status_distribution = {
-            status.value: sum(
-                1 for application in applications
-                if application.status == status
-            )
-            for status in ApplicationStatus
-        }
+        # 2. Average duration using SQL AVG
+        current_time = datetime.utcnow()
 
-        # 4. Calculate average time spent in each status
-        history_records = (
-            ApplicationStatusHistory.query
+        if db.session.get_bind().dialect.name == "sqlite":
+            raw_duration_days = (
+                db.func.julianday(
+                    db.func.coalesce(
+                        ApplicationStatusHistory.exited_at,
+                        current_time
+                    )
+                )
+                - db.func.julianday(
+                    ApplicationStatusHistory.entered_at
+                )
+            )
+        else:
+            raw_duration_days = (
+                db.func.extract(
+                    "epoch",
+                    db.func.coalesce(
+                        ApplicationStatusHistory.exited_at,
+                        current_time
+                    ) - ApplicationStatusHistory.entered_at
+                ) / 86400.0
+            )
+
+        duration_days = db.case(
+            (raw_duration_days < 0, 0),
+            else_=raw_duration_days
+        )
+
+
+
+        history_rows = (
+            db.session.query(
+                ApplicationStatusHistory.status,
+                db.func.avg(duration_days)
+            )
             .join(
                 JobApplication,
                 ApplicationStatusHistory.application_id == JobApplication.id
             )
             .filter(JobApplication.user_id == current_user_id)
+            .group_by(ApplicationStatusHistory.status)
             .all()
         )
 
-        current_time = datetime.utcnow()
-        status_durations = {
-            status.value: [] for status in ApplicationStatus
+        average_days_per_status = {
+            status.value: round(float(avg_days), 2)
+            for status, avg_days in history_rows
         }
 
-        for history in history_records:
-            end_time = history.exited_at or current_time
+        for status in ApplicationStatus:
+            average_days_per_status.setdefault(status.value, 0)
 
-            duration_days = (
-                end_time - history.entered_at
-            ).total_seconds() / 86400
+        # 3. Weekday counts using SQL GROUP BY
+        weekday_names = [
+            "Monday", "Tuesday", "Wednesday",
+            "Thursday", "Friday", "Saturday", "Sunday"
+        ]
 
-            status_durations[history.status.value].append(
-                max(duration_days, 0)
+        weekday_counts = {
+
+            day: 0 for day in weekday_names
+        }
+
+        if db.session.get_bind().dialect.name == "sqlite":
+            weekday_number = db.func.strftime(
+                 "%w",
+                 JobApplication.applied_date
             )
 
-        average_days_per_status = {
-            status: round(sum(durations) / len(durations), 2)
-            if durations else 0
-            for status, durations in status_durations.items()
-        }
+            weekday_rows = (
+                db.session.query(
+                     weekday_number,
+                   db.func.count(JobApplication.id)
+                )
+                .filter(JobApplication.user_id == current_user_id)
+                .group_by(weekday_number)
+                .all()
+            )
 
-        # 5. Find the best day of the week to apply
-        weekday_counts = {
-            day: 0
-            for day in [
-                "Monday", "Tuesday", "Wednesday",
-                "Thursday", "Friday", "Saturday", "Sunday"
-            ]
-        }
+            for day_number, count in weekday_rows:
+                # SQLite: Sunday=0, Monday=1, ..., Saturday=6
+                weekday_index = (int(day_number) - 1) % 7
+                weekday_counts[weekday_names[weekday_index]] = count
+        else:
+            weekday_number = db.func.extract(
+               "isodow",
+                JobApplication.applied_date
+            )
 
-        for application in applications:
-            day = application.applied_date.strftime("%A")
-            weekday_counts[day] += 1
+            weekday_rows = (
+                db.session.query(
+                     weekday_number,
+                     db.func.count(JobApplication.id)
+                )
+                .filter(JobApplication.user_id == current_user_id)
+                .group_by(weekday_number)
+                .all()
+            )
+
+            for day_number, count in weekday_rows:
+                weekday_counts[weekday_names[int(day_number) - 1]] = count
 
         best_day_to_apply = (
             max(weekday_counts, key=weekday_counts.get)
             if total_applications > 0 else None
         )
 
-        return jsonify({
+        # 4. Build analytics response
+        analytics_data = {
             "total_applications": total_applications,
             "response_rate": round(response_rate, 2),
             "average_days_per_status": average_days_per_status,
             "best_day_to_apply": best_day_to_apply,
             "weekday_application_counts": weekday_counts,
             "status_distribution": status_distribution
-        }), 200
+        }
+
+        cache.set(cache_key, analytics_data, timeout=300)
+
+        return jsonify(analytics_data), 200
 
     except Exception:
         logger.exception("Error retrieving application analytics")
@@ -2184,6 +2273,8 @@ def update_application(path: ApplicationPath):
             application_id,
             parsed
         )
+        # Invalidate analytics cache after updating application
+        cache.delete(f"analytics:user:{current_user_id}")
 
         return jsonify({
             "message": "Application updated successfully",
@@ -2240,7 +2331,7 @@ def update_application(path: ApplicationPath):
 @jwt_required()
 def delete_application(path: ApplicationPath):
     application_id = path.application_id
-    
+
     try:
         current_user_id = int(get_jwt_identity())
 
@@ -2282,6 +2373,8 @@ def delete_application(path: ApplicationPath):
         deleted_application = application_service.delete_application(
             application_id
         )
+        # Invalidate analytics cache after deleting application
+        cache.delete(f"analytics:user:{current_user_id}")
 
         # Delete associated resume file
         delete_resume_file(resume_path)
