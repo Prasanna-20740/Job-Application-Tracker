@@ -1,8 +1,8 @@
-﻿# Job Application Tracker SaaS
+# Job Application Tracker SaaS
 
 A Python Flask-based Job Application Tracker SaaS designed to help users manage job applications, track application progress, upload and analyze resumes, discover external job opportunities, monitor application analytics, and manage interview schedules.
 
-The application follows a modular backend architecture and includes secure authentication, RESTful APIs, database management, external integrations, automated notifications, background jobs, and comprehensive testing.
+The application follows a modular backend architecture and includes secure authentication, versioned RESTful APIs, database management, external integrations, automated notifications, background jobs, performance optimization, and comprehensive testing.
 
 **GitHub Repository:** https://github.com/Prasanna-20740/Job-Application-Tracker
 
@@ -10,20 +10,20 @@ The application follows a modular backend architecture and includes secure authe
 
 ## Table of Contents
 
-- Overview
-- Features
-- Technology Stack
-- Project Development Progress (Day 1â€“Day 16)
-- API Endpoints
-- Project Structure
-- Installation and Setup
-- Environment Configuration
-- Running the Application
-- Email Notification System
-- Security Implementation
-- Automated Testing
-- Project Status
-- Developer
+- [Overview](#overview)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Project Development Progress (Day 1–Day 18)](#project-development-progress)
+- [API Endpoints](#api-endpoints)
+- [Project Structure](#project-structure)
+- [Installation and Setup](#installation-and-setup)
+- [Environment Configuration](#environment-configuration)
+- [Running the Application](#running-the-application)
+- [Email Notification System](#email-notification-system)
+- [Security Implementation](#security-implementation)
+- [Automated Testing](#automated-testing)
+- [Project Status](#project-status)
+- [Developer](#developer)
 
 ---
 
@@ -39,9 +39,10 @@ The Job Application Tracker helps users maintain job application records, monito
 - Application status tracking and history.
 - PDF resume upload, text extraction, and skill extraction.
 - Asynchronous resume parsing using Celery.
-- Application statistics, pagination, and analytics.
-- External job search using Adzuna API.
-- Redis caching for job search results and rate limiting.
+- Application statistics, pagination, filtering, and analytics.
+- API versioning (V1 and V2) with V1 deprecation headers.
+- External job search using the Adzuna API.
+- Redis caching for job search results and analytics, and Redis-backed rate limiting.
 - Interactive Swagger API documentation and Postman collection.
 - CSV import, export, and bulk application status updates.
 - Weekly job application digest emails.
@@ -52,6 +53,7 @@ The Job Application Tracker helps users maintain job application records, monito
 - API rate limiting, security headers, input sanitization, and restricted CORS.
 - Scheduled stale application email alerts using Celery Beat.
 - Background task monitoring using Flower.
+- Optimized analytics queries with a composite PostgreSQL index and performance benchmarking.
 - Automated testing using Pytest and CI using GitHub Actions.
 
 ---
@@ -120,7 +122,7 @@ The Job Application Tracker helps users maintain job application records, monito
 
 # Project Development Progress
 
-## Day 1 â€“ Project Setup and Architecture
+## Day 1 – Project Setup and Architecture
 - Planned the Job Application Tracker SaaS.
 - Identified project requirements and core features.
 - Designed a modular Flask backend architecture.
@@ -131,26 +133,25 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** Initial project setup and backend architecture.
 
-## Day 2 â€“ Database Design and Models
+## Day 2 – Database Design and Models
 - Integrated PostgreSQL with Flask.
 - Configured SQLAlchemy ORM.
 - Integrated Flask-Migrate and Alembic.
 - Created the `JobApplication` and `User` models.
-- Implemented application status using Python Enum.
+- Implemented application status using a Python Enum.
 - Designed user and application relationships.
 
 **Deliverable:** Database models and migration setup.
 
-## Day 3 â€“ REST API Development
+## Day 3 – REST API Development
 - Implemented RESTful APIs.
-- Developed application CRUD operations.
-- Implemented application creation, retrieval, updating, and deletion.
+- Developed application CRUD operations (create, retrieve, update, delete).
 - Added request validation and structured error handling.
 - Added user management endpoints.
 
 **Deliverable:** Core application management APIs.
 
-## Day 4 â€“ Resume Upload and PDF Processing
+## Day 4 – Resume Upload and PDF Processing
 - Implemented PDF resume upload.
 - Added file type and PDF signature validation.
 - Configured file storage.
@@ -160,7 +161,7 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** Resume upload and PDF processing functionality.
 
-## Day 5 â€“ Service Layer and Business Logic
+## Day 5 – Service Layer and Business Logic
 - Created `ApplicationService`.
 - Separated business logic from API routes.
 - Implemented reusable service methods.
@@ -169,7 +170,7 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** Modular service-layer architecture.
 
-## Day 6 â€“ Pytest and GitHub Actions CI
+## Day 6 – Pytest and GitHub Actions CI
 - Configured Pytest and reusable test fixtures.
 - Integrated Factory Boy.
 - Configured SQLite for testing.
@@ -181,7 +182,7 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** Automated testing and CI workflow.
 
-## Day 7 â€“ JWT Authentication and Advanced Testing
+## Day 7 – JWT Authentication and Advanced Testing
 - Integrated Flask-JWT-Extended.
 - Implemented user registration and login.
 - Implemented access and refresh tokens.
@@ -192,7 +193,7 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** Secure JWT authentication system.
 
-## Day 8 â€“ REST API Enhancement and Swagger Documentation
+## Day 8 – REST API Enhancement and Swagger Documentation
 - Integrated Flask-OpenAPI3.
 - Configured Swagger UI and documented REST API endpoints.
 - Implemented application pagination and statistics.
@@ -204,13 +205,13 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** Documented and enhanced REST API.
 
-## Day 9 â€“ External Job Search API and Redis Caching
+## Day 9 – External Job Search API and Redis Caching
 
 ### Adzuna API Integration
-- Integrated Adzuna Job Search API.
+- Integrated the Adzuna Job Search API.
 - Configured API credentials using environment variables.
 - Implemented keyword-based and location-based job search.
-- Created `JobSearchService` and Pydantic `JobSuggestion` DTO.
+- Created `JobSearchService` and the Pydantic `JobSuggestion` DTO.
 - Added external API error handling.
 
 ### Redis Integration
@@ -223,26 +224,25 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** External job search and Redis caching.
 
-## Day 10 â€“ Email Notifications and Interview Reminders
+## Day 10 – Email Notifications and Interview Reminders
 
 ### Email Integration
 - Integrated Flask-Mail.
-- Configured Mailtrap Email Sandbox.
+- Configured the Mailtrap Email Sandbox.
 - Configured SMTP credentials using environment variables.
 - Verified email delivery through Mailtrap.
 
 ### Weekly Job Application Digest
 - Retrieves applications updated during the previous seven days.
-- Generates a weekly application summary.
-- Displays company, role, and application status.
+- Generates a weekly application summary showing company, role, and status.
 - Sends digest emails to registered users.
-- Configured weekly scheduling for Monday at 9:00 AM.
+- Scheduled weekly on Monday at 9:00 AM.
 
 ### Interview Scheduling
-- Created the Interview database model and linked interviews with job applications.
+- Created the `Interview` database model and linked interviews with job applications.
 - Added interview date, time, type, meeting link, and notes.
 - Implemented automatic interview reminder emails.
-- Checks upcoming interviews every five minutes.
+- Checks for upcoming interviews every five minutes.
 - Sends reminders approximately 24 hours before interviews.
 - Uses `reminder_sent` to prevent duplicate reminders.
 
@@ -252,25 +252,24 @@ The Job Application Tracker helps users maintain job application records, monito
 
 **Deliverable:** Automated email notifications and interview reminders.
 
-## Day 11 â€“ CSV Import, Export and Bulk Updates
+## Day 11 – CSV Import, Export and Bulk Updates
 
 ### CSV Export
 - Exported applications belonging to the authenticated user.
-- Downloaded application records as CSV.
-- Included ID, company, role, status, applied date, and notes.
+- Downloaded application records as CSV (ID, company, role, status, applied date, notes).
 - Protected user data using JWT authentication and user-level filtering.
 
 ### CSV Import
 - Implemented application import using CSV files.
 - Validated required CSV headers and application fields.
-- Created new applications when ID was empty.
-- Updated existing applications using application ID.
+- Created new applications when the ID was empty.
+- Updated existing applications using the application ID.
 - Skipped invalid rows and generated error logs.
 
 ### Bulk Status Update
 - Implemented bulk application status updates.
 - Validated application IDs and status values.
-- Supported APPLIED, PHONE_SCREEN, INTERVIEW, OFFER, and REJECTED statuses.
+- Supported `APPLIED`, `PHONE_SCREEN`, `INTERVIEW`, `OFFER`, and `REJECTED` statuses.
 
 ### API Endpoints
 - `GET /applications/export`
@@ -281,32 +280,30 @@ Added `tests/test_csv_api.py` with eight automated tests.
 
 **Deliverable:** CSV data management and bulk update functionality.
 
-## Day 12 â€“ Analytics Dashboard Backend
+## Day 12 – Analytics Dashboard Backend
 
 ### Application Status History
-- Created `ApplicationStatusHistory` database model.
-- Added application status history tracking.
-- Stored status entry and exit timestamps.
-- Recorded initial application status.
-- Updated status history when application status changed.
+- Created the `ApplicationStatusHistory` database model.
+- Stored status entry and exit timestamps and recorded the initial application status.
+- Updated status history when the application status changed.
 - Integrated history tracking into application creation, updates, CSV import, and bulk status updates.
-- Created and executed Alembic database migration.
+- Created and executed an Alembic database migration.
 
 ### Response Rate Calculation
 
-`Response Rate = (Interview Applications / Total Applications) Ã— 100`
+`Response Rate = (Interview Applications / Total Applications) × 100`
 
-The API calculates the percentage of applications that reached INTERVIEW status.
+The API calculates the percentage of applications that reached `INTERVIEW` status.
 
 ### Time-in-Stage Analysis
-- Calculated average days spent in each application status.
+- Calculated the average days spent in each application status.
 - Used status entry and exit timestamps.
-- Tracked the current stage using the current time when no exit timestamp existed.
-- Provided average duration for APPLIED, PHONE_SCREEN, INTERVIEW, OFFER, and REJECTED statuses.
+- Used the current time as the end time when no exit timestamp existed (current stage).
+- Provided average duration for `APPLIED`, `PHONE_SCREEN`, `INTERVIEW`, `OFFER`, and `REJECTED`.
 
 ### Best Day to Apply
-- Analyzed application dates and grouped applications by weekday.
-- Calculated applications submitted on each weekday.
+- Grouped applications by weekday of the application date.
+- Calculated the number of applications submitted on each weekday.
 - Identified the weekday with the highest number of applications.
 
 ### Analytics API
@@ -323,10 +320,10 @@ Returns:
 
 **Deliverable:** Application analytics API and status history tracking.
 
-## Day 13 â€“ Admin API and Role Management
+## Day 13 – Admin API and Role Management
 
 ### User Role Management
-- Added USER and ADMIN roles to the User model.
+- Added `USER` and `ADMIN` roles to the User model.
 - Created and applied database migrations for user roles and audit logs.
 - Assigned ADMIN privileges to the administrator account.
 
@@ -341,24 +338,20 @@ Returns:
 - Prevented deletion of the last administrator.
 - Implemented user impersonation with dedicated JWT claims.
 
-### Admin API Endpoints
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/users` | List all users (Admin only) |
-| DELETE | `/admin/users/<user_id>` | Delete a user (Admin only) |
-| POST | `/admin/users/<user_id>/impersonate` | Impersonate a user (Admin only) |
-
 ### Audit Logging
 - Created the `AuditLog` model and `record_audit()` helper.
 - Recorded user deletion and impersonation actions.
 - Stored administrator, target user, action, and timestamp details.
 - Preserved audit records after user deletion.
 
-Added `tests/test_admin_api.py` with seven tests.
+### Automated Testing
+Added `tests/test_admin_api.py` with seven tests covering admin authorization, user deletion and related record cleanup, self-deletion prevention, missing user handling, impersonation, impersonation authorization restrictions, and audit log verification.
+
+**Test Results:** 109 passed, 0 failed.
 
 **Deliverable:** Admin role management, protected admin APIs, impersonation, and audit logging.
 
-## Day 14 â€“ Webhooks and Integrations
+## Day 14 – Webhooks and Integrations
 
 ### Outbound Webhooks
 - Triggered webhook events when an application status changed.
@@ -371,24 +364,27 @@ Added `tests/test_admin_api.py` with seven tests.
 
 ### Slack Integration
 - Integrated Slack using Incoming Webhooks.
-- Automatically sends a Slack notification when an application status changes to OFFER.
+- Automatically sends a Slack notification when an application status changes to `OFFER`.
 
 ### Retry Mechanism
 - Implemented automatic retries for failed webhook deliveries.
 - Configured a maximum of three retries.
-- Marks delivery as FAILED after all retry attempts fail.
+- Marks delivery as `FAILED` after all retry attempts fail.
 
 ### Background Scheduler and Delivery Tracking
 - Integrated APScheduler to process pending webhook deliveries automatically.
 - Created the `WebhookDelivery` database model.
-- Tracks PENDING, PROCESSING, DELIVERED, and FAILED statuses.
+- Tracks `PENDING`, `PROCESSING`, `DELIVERED`, and `FAILED` statuses.
 - Stores delivery attempts and error details.
 
-Added `tests/test_webhook_service.py` with ten tests.
+### Automated Testing
+Added `tests/test_webhook_service.py` with ten tests covering HMAC signature generation, valid and invalid signature verification, webhook event creation, Slack notification queueing, successful delivery, failed delivery and retry scheduling, and the maximum retry limit.
+
+**Test Results:** 119 passed, 0 failed.
 
 **Deliverable:** Webhook integration, HMAC security, Slack notifications, retry handling, and delivery tracking.
 
-## Day 15 â€“ Rate Limiting and Security
+## Day 15 – Rate Limiting and Security
 
 ### API Rate Limiting
 - Integrated Flask-Limiter.
@@ -399,22 +395,21 @@ Added `tests/test_webhook_service.py` with ten tests.
 
 ### Security Headers
 - Integrated Flask-Talisman.
-- Configured `X-Frame-Options` as DENY.
-- Configured `X-Content-Type-Options` as nosniff.
-- Configured `Referrer-Policy` as strict-origin-when-cross-origin.
+- Configured `X-Frame-Options` as `DENY`.
+- Configured `X-Content-Type-Options` as `nosniff`.
+- Configured `Referrer-Policy` as `strict-origin-when-cross-origin`.
 - Kept HTTPS enforcement disabled for local HTTP development.
 
 ### XSS Prevention
 - Integrated nh3 for input sanitization.
 - Created `services/security_service.py`.
-- Implemented `sanitize_notes()`.
-- Removed HTML tags and attributes from application notes.
+- Implemented `sanitize_notes()` to remove HTML tags and attributes from application notes.
 - Applied sanitization during application creation and updates.
 - Integrated sanitization into Marshmallow schema validation.
 
 ### CORS Configuration
 - Integrated Flask-CORS.
-- Restricted allowed frontend origin to `http://localhost:3000`.
+- Restricted the allowed frontend origin to `http://localhost:3000`.
 - Configured permitted request methods and headers.
 - Exposed rate-limit response headers.
 
@@ -423,11 +418,11 @@ Added `tests/test_webhook_service.py` with ten tests.
 - Tested normal text and HTML sanitization.
 - Tested script and malicious image tag removal.
 - Tested security headers and allowed/blocked CORS origins.
-- Verified rate limiting: the first 100 requests succeeded and subsequent requests were rate-limited with HTTP 429.
+- Verified rate limiting: the first 100 requests succeeded and subsequent requests returned HTTP 429.
 
 **Deliverable:** API rate limiting, Redis-backed request tracking, security headers, XSS protection, CORS configuration, and security tests.
 
-## Day 16 â€“ Background Jobs and Asynchronous Processing
+## Day 16 – Background Jobs and Asynchronous Processing
 
 ### Celery and Redis Integration
 - Integrated Celery for asynchronous background task processing.
@@ -437,8 +432,7 @@ Added `tests/test_webhook_service.py` with ten tests.
 ### Asynchronous Resume Parsing
 - Updated the resume upload workflow to trigger background processing.
 - Implemented the `tasks.parse_resume` Celery task.
-- Extracted text from uploaded PDF resumes.
-- Automatically identified skills from extracted resume content.
+- Extracted text from uploaded PDF resumes and identified skills automatically.
 - Saved extracted resume text and skills in PostgreSQL.
 - Added resume parsing status and parsed timestamp tracking.
 
@@ -447,7 +441,7 @@ Added `tests/test_webhook_service.py` with ten tests.
 - Identifies applications that have not been updated for more than 14 days.
 - Sends email reminders to users with eligible stale applications.
 - Tracks alert delivery using the `stale_alert_sent_at` field to prevent repeated alerts.
-- Excludes applications with OFFER and REJECTED statuses.
+- Excludes applications with `OFFER` and `REJECTED` statuses.
 
 ### Celery Beat Scheduling
 - Configured Celery Beat for periodic background tasks.
@@ -459,16 +453,107 @@ Added `tests/test_webhook_service.py` with ten tests.
 - Monitored worker availability and task execution.
 - Verified successful background task execution through the Flower dashboard.
 
-### Verification and Testing
-- Verified Redis connection and Celery worker availability.
-- Successfully uploaded a PDF resume and verified asynchronous parsing through worker logs.
-- Confirmed task execution status as SUCCESS in Flower.
-- Verified extracted skills were saved in PostgreSQL.
-- Confirmed resume parsing status as COMPLETED.
-- Tested stale application alert task.
-- **128 tests passed and 0 tests failed.**
+### Verification
+- Verified the Redis connection and Celery worker availability.
+- Uploaded a PDF resume and verified asynchronous parsing through worker logs.
+- Confirmed task status as `SUCCESS` in Flower.
+- Verified extracted skills were saved in PostgreSQL and parsing status was `COMPLETED`.
+- Tested the stale application alert task.
 
-**Deliverable:** Asynchronous resume parsing, Redis-backed Celery task processing, scheduled stale application email alerts, and Flower-based task monitoring.
+**Test Results:** 128 passed, 0 failed.
+
+**Deliverable:** Asynchronous resume parsing, scheduled stale application email alerts, and Flower-based task monitoring.
+
+## Day 17 – API Versioning and Deprecation
+
+### API Versioning
+- Implemented API versioning using Flask `APIBlueprint`.
+- Created separate V1 and V2 API blueprints.
+- Added `/api/v1/` and `/api/v2/` URL prefixes.
+- Enabled V1 and V2 to operate simultaneously.
+
+### V1 Deprecation
+- Added a `Deprecation: true` response header to V1 endpoints to notify API consumers.
+
+### V2 Enhancements
+- Implemented the V2 applications endpoint with full application responses.
+- Added a compact summary response using `?format=summary` (ID, company, role, status, applied date).
+- Added input validation for response formats.
+
+### Pagination and Filtering
+- Implemented pagination for V1 and V2 endpoints using `page` and `per_page` query parameters.
+- Added application status filtering.
+- Added pagination metadata to API responses.
+
+### Documentation
+- Created `CHANGELOG.md` following Semantic Versioning.
+- Created a V1 to V2 API migration guide.
+- Documented versioned endpoints and response formats.
+
+### Automated Testing
+Created `tests/test_api_versioning.py` covering the V1 response and deprecation header, V2 full and summary responses, invalid response formats, and authentication requirements.
+
+**Test Results:** 133 passed, 0 failed. Overall coverage: 82% (V1: 82%, V2: 79%).
+
+**Deliverable:** Versioned V1/V2 APIs, V1 deprecation headers, compact V2 summary responses, pagination, filtering, migration documentation, and API versioning tests.
+
+## Day 18 – API and Web Performance Optimization
+
+### SQL Query Optimization
+- Optimized `GET /api/analytics` using SQL-level aggregation.
+- Used `GROUP BY` and `COUNT()` for application status distribution.
+- Used `AVG()` for average application duration.
+- Used database-level date aggregation for weekday application counts.
+- Reduced unnecessary ORM object loading and Python-side processing.
+
+### Composite Database Index
+- Added the composite index `ix_job_application_user_status_applied_date` on `user_id`, `status`, and `applied_date`.
+- Created and applied an Alembic migration.
+- Verified index creation in PostgreSQL.
+
+### Redis Analytics Caching
+- Implemented Redis cache HIT and MISS handling.
+- Configured a 300-second (5-minute) cache TTL.
+- Added cache invalidation when applications are created, updated, or deleted.
+
+### Database Query Profiling
+- Measured SQL query count and execution time.
+- Captured executed SQL statements.
+- Separated analytics aggregation queries from JWT blocklist queries.
+
+### Performance Benchmarking
+- Created `scripts/benchmark_analytics.py`.
+- Generated 10,000 temporary applications and 10,000 history records.
+- Benchmarked cache MISS and cache HIT response times.
+- Added automatic benchmark data cleanup.
+
+### Performance Results
+
+| Metric | Result |
+|---|---:|
+| Benchmark applications | 10,000 |
+| Benchmark history records | 10,000 |
+| Cache MISS response time | 93.72 ms |
+| Cache HIT average | 6.64 ms |
+| Cache HIT minimum | 5.06 ms |
+| Cache HIT maximum | 10.07 ms |
+| SQL queries during profiling | 9 |
+| Total SQL execution time | 58.52 ms |
+
+**SQL Query Profile:**
+- 3 analytics aggregation queries during a cache MISS.
+- 6 JWT blocklist queries across 6 benchmark requests.
+- Analytics aggregation queries were skipped on cache HIT requests.
+
+### Verification
+- Verified analytics status distribution, average duration, and weekday application counts.
+- Tested Redis cache HIT and MISS behavior and cache invalidation.
+- Confirmed the PostgreSQL composite index and Alembic migration head.
+- Completed the 10,000-record benchmark and confirmed benchmark data cleanup.
+
+**Test Results:** 135 passed, 0 failed (3.15 seconds).
+
+**Deliverable:** SQL analytics optimization, PostgreSQL composite indexing, Redis caching, SQL query profiling, and 10,000-record performance benchmarking.
 
 ---
 
@@ -492,6 +577,15 @@ Added `tests/test_webhook_service.py` with ten tests.
 | PATCH | `/applications/{application_id}` | Update application |
 | DELETE | `/applications/{application_id}` | Delete application |
 
+## Versioned Application APIs
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/v1/applications` | V1 applications list (deprecated, returns `Deprecation: true`) |
+| GET | `/api/v2/applications` | V2 applications list with pagination and status filtering |
+| GET | `/api/v2/applications?format=summary` | Compact summary response (ID, company, role, status, applied date) |
+
+Query parameters: `page`, `per_page`, `status`, `format` (V2 only).
+
 ## Resume APIs
 | Method | Endpoint | Description |
 |---|---|---|
@@ -514,13 +608,13 @@ Added `tests/test_webhook_service.py` with ten tests.
 ## Analytics API
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/analytics` | Retrieve application analytics |
+| GET | `/api/analytics` | Retrieve application analytics (Redis cached, 5-minute TTL) |
 
 ## Admin APIs
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/users` | List users (Admin only) |
-| DELETE | `/admin/users/<user_id>` | Delete user (Admin only) |
+| GET | `/users` | List all users (Admin only) |
+| DELETE | `/admin/users/<user_id>` | Delete a user (Admin only) |
 | POST | `/admin/users/<user_id>/impersonate` | Impersonate a user (Admin only) |
 
 All protected endpoints require JWT authentication. Admin endpoints additionally require administrator authorization.
@@ -531,34 +625,37 @@ All protected endpoints require JWT authentication. Admin endpoints additionally
 
 ```text
 Job-Application-Tracker/
-â”‚
-â”œâ”€â”€ .github/
-â”‚   â””â”€â”€ workflows/
-â”‚       â””â”€â”€ tests.yml
-â”‚
-â”œâ”€â”€ api/
-â”œâ”€â”€ auth/
-â”œâ”€â”€ migrations/
-â”‚   â””â”€â”€ versions/
-â”œâ”€â”€ models/
-â”œâ”€â”€ schemas/
-â”œâ”€â”€ services/
-â”œâ”€â”€ templates/
-â”‚   â””â”€â”€ emails/
-â”œâ”€â”€ tests/
-â”œâ”€â”€ postman/
-â”œâ”€â”€ uploads/
-â”‚
-â”œâ”€â”€ app.py
-â”œâ”€â”€ run.py
-â”œâ”€â”€ celery_app.py
-â”œâ”€â”€ tasks.py
-â”œâ”€â”€ seed.py
-â”œâ”€â”€ docker-compose.yml
-â”œâ”€â”€ requirements.txt
-â”œâ”€â”€ .coveragerc
-â”œâ”€â”€ .gitignore
-â””â”€â”€ README.md
+│
+├── .github/
+│   └── workflows/
+│       └── tests.yml
+│
+├── api/
+├── auth/
+├── migrations/
+│   └── versions/
+├── models/
+├── schemas/
+├── scripts/
+│   └── benchmark_analytics.py
+├── services/
+├── templates/
+│   └── emails/
+├── tests/
+├── postman/
+├── uploads/
+│
+├── app.py
+├── run.py
+├── celery_app.py
+├── tasks.py
+├── seed.py
+├── docker-compose.yml
+├── requirements.txt
+├── CHANGELOG.md
+├── .coveragerc
+├── .gitignore
+└── README.md
 ```
 
 *Note: This is a representative project structure. Some folders and files may vary as the project evolves.*
@@ -603,7 +700,7 @@ pip install -r requirements.txt
 
 ## 5. Configure Environment Variables
 
-Create a `.env` file in the project root and configure the required database, API, Redis, and email credentials.
+Create a `.env` file in the project root and configure the required database, API, Redis, and email credentials (see [Environment Configuration](#environment-configuration)).
 
 ## 6. Start PostgreSQL and Redis
 
@@ -630,7 +727,7 @@ PONG
 flask --app app db upgrade
 ```
 
-## 8. Start Flask Application
+## 8. Start the Flask Application
 
 ```bash
 python app.py
@@ -712,7 +809,13 @@ celery -A celery_app.celery flower --port=5555
 
 Flower Dashboard: `http://127.0.0.1:5555`
 
-Run Flask, Celery worker, and Celery Beat in separate terminals. Start Flower in another terminal when task monitoring is required.
+Run Flask, the Celery worker, and Celery Beat in separate terminals. Start Flower in another terminal when task monitoring is required.
+
+Run the analytics benchmark (optional):
+
+```bash
+python scripts/benchmark_analytics.py
+```
 
 ---
 
@@ -724,7 +827,7 @@ Run Flask, Celery worker, and Celery Beat in separate terminals. Start Flower in
 - Sends an HTML summary email with application details.
 
 ## Interview Reminder
-- Scheduler checks every five minutes.
+- The scheduler checks every five minutes.
 - Finds interviews approximately 24 hours before their scheduled time.
 - Sends an HTML reminder email.
 - Updates the `reminder_sent` database field after successful delivery.
@@ -732,7 +835,7 @@ Run Flask, Celery worker, and Celery Beat in separate terminals. Start Flower in
 ## Stale Application Alert
 - Celery Beat schedules the alert task daily at 9:00 AM (Asia/Kolkata).
 - Finds applications that have not been updated for more than 14 days.
-- Excludes OFFER and REJECTED applications.
+- Excludes `OFFER` and `REJECTED` applications.
 - Uses `stale_alert_sent_at` to prevent duplicate alerts.
 
 Mailtrap Email Sandbox was used to verify SMTP connectivity, weekly digest delivery, interview reminder delivery, Jinja2 dynamic content, and HTML email rendering.
@@ -779,53 +882,52 @@ pytest tests/test_analytics_api.py -v
 pytest tests/test_admin_api.py -v
 pytest tests/test_webhook_service.py -v
 pytest tests/test_security.py -v
+pytest tests/test_api_versioning.py -v
 ```
 
-## Latest Test Results â€“ Day 16
+## Latest Test Results – Day 18
 
 | Metric | Result |
 |---|---:|
-| Total Tests Passed | 128 |
+| Total Tests Passed | 135 |
 | Tests Failed | 0 |
+| Overall Coverage (Day 17) | 82% |
 | Security Tests | Passed |
 | Webhook Tests | Passed |
 | Admin API Tests | Passed |
 | Authentication Tests | Passed |
+| API Versioning Tests | Passed |
 | Application API Tests | Passed |
-
-The complete test suite passed successfully with 128 tests.
 
 ---
 
-# Current Project Status
+# Project Status
 
-**Development Progress: Day 1 â€“ Day 16 Completed**
+**Development Progress: Day 1 – Day 18 completed.** All changes are pushed to the `main` branch.
 
 ### Major Milestones
-- Modular Flask backend architecture.
-- PostgreSQL database and SQLAlchemy ORM.
+- Modular Flask backend architecture with a service layer.
+- PostgreSQL database and SQLAlchemy ORM with Alembic migrations.
 - RESTful CRUD APIs and Swagger documentation.
 - PDF resume upload, text extraction, and skill extraction.
-- Service-layer architecture and structured error handling.
 - JWT authentication and token revocation.
 - Redis caching and external job search.
 - Automated email notifications and interview reminders.
 - CSV import, export, and bulk updates.
 - Application analytics and status history.
 - Admin role management and audit logging.
-- Webhook and Slack integration.
-- HMAC signature verification and retry handling.
+- Webhook and Slack integration with HMAC signature verification and retry handling.
 - API rate limiting and security hardening.
-- Celery and Redis background task processing.
+- Celery and Redis background task processing with Flower monitoring.
 - Asynchronous resume parsing and scheduled stale application alerts.
-- Flower task monitoring.
+- API versioning (V1/V2) with deprecation headers and a migration guide.
+- SQL query optimization, composite indexing, Redis analytics caching, and performance benchmarking.
 - Automated testing and GitHub Actions CI.
 
-### Latest GitHub Commit
-
-Update this section with the latest commit ID and message after pushing the README changes.
-
-- **Branch:** `main`
+### Future Enhancements
+- Deployment and production configuration (HTTPS enforcement, production settings).
+- Monitoring and logging improvements.
+- Further security hardening.
 
 ---
 
@@ -839,362 +941,4 @@ Update this section with the latest commit ID and message after pushing the READ
 
 ---
 
-Developed as a hands-on Python Flask SaaS project, focusing on backend development, REST API design, database management, authentication, external API integration, caching, email automation, analytics, webhooks, security implementation, background processing, automated testing, and CI/CD.
-
-Developed as a hands-on Python Flask SaaS project, focusing on backend development, REST API design, database management, authentication, external API integration, caching, email automation, analytics, automated testing, and CI/CD.
-
-
-## Day 13 - Admin API & Role Management
-
-### Features Implemented
-
-**1. User Role Management**
-- Added USER and ADMIN roles to the User model.
-- Created and applied database migrations for user roles and audit logs.
-- Assigned ADMIN privileges to the administrator account.
-
-**2. Admin Authorization**
-- Implemented the `@admin_required` decorator.
-- Protected administrator-only endpoints using JWT authentication and role verification.
-- Restricted `GET /users` to administrators.
-
-**3. Admin User Management**
-- Implemented administrator user deletion.
-- Prevented administrators from deleting their own accounts.
-- Prevented deletion of the last administrator.
-- Implemented user impersonation with dedicated JWT claims.
-
-### Admin API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/users` | List all users (Admin only) |
-| DELETE | `/admin/users/<user_id>` | Delete a user (Admin only) |
-| POST | `/admin/users/<user_id>/impersonate` | Impersonate a user (Admin only) |
-
-### Audit Logging
-
-- Created the `AuditLog` model and `record_audit()` helper.
-- Recorded user deletion and impersonation actions.
-- Stored administrator, target user, action and timestamp details.
-- Preserved audit records after user deletion.
-
-### Automated Testing
-
-Added `tests/test_admin_api.py` with 7 tests covering:
-- Admin authorization.
-- User deletion and related record cleanup.
-- Self-deletion prevention.
-- Missing user handling.
-- User impersonation.
-- Impersonation authorization restrictions.
-- Audit log verification.
-
-**Day 13 Full Test Results:**
-- 109 tests passed.
-- 0 tests failed.
-
-### Day 13 Deliverable
-
-Completed administrator role management, secured admin APIs, user impersonation, account deletion and audit logging.
-
-
-## Day 14 â€“ Webhooks & Integrations
-
-### Features Implemented
-
-**1. Outbound Webhooks**
-- Triggered webhook events when an application status changes.
-- Stored webhook delivery details in the database.
-
-**2. HMAC Security**
-- Implemented HMAC-SHA256 signature generation.
-- Added signature verification to validate webhook messages.
-- Rejected invalid signatures.
-
-**3. Slack Integration**
-- Integrated Slack using Incoming Webhooks.
-- Automatically sends a Slack notification when an application status changes to OFFER.
-
-**4. Retry Mechanism**
-- Implemented automatic retries for failed webhook deliveries.
-- Configured a maximum of 3 retries.
-- Marks delivery as FAILED after all retry attempts fail.
-
-**5. Background Scheduler**
-- Integrated APScheduler to process pending webhook deliveries automatically.
-- Runs webhook delivery processing in the background.
-
-**6. Webhook Delivery Tracking**
-- Created the `WebhookDelivery` database model.
-- Tracks PENDING, PROCESSING, DELIVERED and FAILED statuses.
-- Stores delivery attempts and error details.
-
-### Automated Testing
-
-Added `tests/test_webhook_service.py` with 10 tests covering:
-- HMAC signature generation.
-- Valid and invalid signature verification.
-- Webhook event creation.
-- Slack notification queueing.
-- Successful webhook delivery.
-- Failed delivery and retry scheduling.
-- Maximum retry limit.
-
-**Day 14 Full Test Results:**
-- 119 tests passed.
-- 0 tests failed.
-
-### Day 14 Deliverable
-
-Completed webhook integration, HMAC security, Slack notifications, automatic retry handling, background scheduling and webhook delivery tracking.
-
-
-## Day 15 â€“ API Security & Rate Limiting
-
-### Features Implemented
-
-**1. Rate Limiting**
-- Integrated Flask-Limiter for API request rate limiting.
-- Configured Redis as the rate-limit storage backend.
-- Added request limits to protect API endpoints from excessive requests.
-
-**2. Security Headers**
-- Integrated Flask-Talisman.
-- Configured HTTP security headers to improve application security.
-
-**3. HTML Sanitization**
-- Integrated nh3 for HTML sanitization.
-- Added protection against potentially unsafe HTML content.
-
-**4. CORS Configuration**
-- Configured Cross-Origin Resource Sharing (CORS).
-- Controlled access to API resources from permitted origins.
-
-**5. Redis Integration**
-- Used Redis for rate-limit storage.
-- Verified Redis connectivity.
-
-### Day 15 Deliverable
-
-Completed API rate limiting, Redis-backed request tracking, security headers, HTML sanitization and CORS configuration.
-
----
-
-## Day 16 â€“ Background Jobs & Asynchronous Processing
-
-### Features Implemented
-
-**1. Celery & Redis Integration**
-- Integrated Celery for asynchronous background task processing.
-- Configured Redis as the message broker.
-- Configured Redis as the task result backend.
-- Added Flask application context support for Celery tasks.
-
-**2. Asynchronous Resume Parsing**
-- Updated the resume upload workflow to trigger background processing.
-- Implemented the `tasks.parse_resume` Celery task.
-- Extracted text from uploaded PDF resumes.
-- Automatically identified skills from extracted resume content.
-- Saved extracted resume text and skills in PostgreSQL.
-- Added resume parsing status and parsed timestamp tracking.
-
-**3. Stale Application Alerts**
-- Implemented the `tasks.send_stale_application_alerts` task.
-- Identifies applications that have not been updated for more than 14 days.
-- Sends email reminders to users with eligible stale applications.
-- Tracks alert delivery using the `stale_alert_sent_at` field.
-- Excludes applications with OFFER and REJECTED statuses.
-
-**4. Celery Beat Scheduling**
-- Configured Celery Beat for periodic background tasks.
-- Scheduled stale application alerts to run daily at 9:00 AM.
-- Configured the Asia/Kolkata timezone.
-
-**5. Flower Monitoring**
-- Integrated Flower for Celery task monitoring.
-- Monitored worker availability and task execution.
-- Verified successful background task execution through the Flower dashboard.
-
-### Day 16 Verification
-
-- Successfully uploaded a PDF resume.
-- Verified asynchronous resume parsing through Celery worker logs.
-- Confirmed task execution status as SUCCESS in Flower.
-- Verified extracted skills were saved in PostgreSQL.
-- Confirmed resume parsing status as COMPLETED.
-- Tested stale application alert task with no eligible applications.
-
-**Day 16 Test Results:**
-- 128 tests passed.
-- 0 tests failed.
-
-### Day 16 Deliverable
-
-Completed asynchronous resume parsing, Redis-backed Celery task processing, scheduled stale application email alerts and Flower-based task monitoring.
-
-
-*Developed as a hands-on Python Flask SaaS project, demonstrating backend development, REST API design, database management, authentication, external API integration, caching, email automation, analytics, webhooks, security implementation, automated testing, and CI/CD.*
-
-
-
----
-
-## Day 17 - API Versioning & Deprecation
-
-### Features Implemented
-
-**1. API Versioning**
-- Implemented API versioning using Flask APIBlueprint.
-- Created separate V1 and V2 API blueprints.
-- Registered both versions with the Flask application.
-- Added `/api/v1/` and `/api/v2/` URL prefixes.
-- Enabled V1 and V2 APIs to operate simultaneously.
-
-**2. V1 API Deprecation**
-- Implemented a deprecation response header for V1 endpoints.
-- Added `Deprecation: true` to V1 API responses.
-- Notified API consumers that V1 is deprecated.
-
-**3. V2 API Enhancements**
-- Implemented the V2 applications endpoint.
-- Added full application response support.
-- Added compact summary response using `?format=summary`.
-- Summary response includes ID, company, role, status and applied date.
-- Added input validation for response formats.
-
-**4. Pagination and Filtering**
-- Implemented pagination for V1 and V2 endpoints.
-- Added page and per_page query parameters.
-- Added application status filtering.
-- Added pagination metadata to API responses.
-
-**5. API Documentation**
-- Created `CHANGELOG.md` following Semantic Versioning.
-- Created a V1 to V2 API migration guide.
-- Documented versioned endpoints and response formats.
-
-**6. Automated Testing**
-- Created `tests/test_api_versioning.py`.
-- Tested V1 API response and deprecation header.
-- Tested V2 full and summary responses.
-- Tested invalid response formats.
-- Tested authentication requirements.
-
-### Day 17 Verification
-
-- Verified V1 applications endpoint successfully.
-- Confirmed `Deprecation: true` response header.
-- Verified V2 full response.
-- Verified V2 summary response using `?format=summary`.
-- Confirmed pagination and filtering support.
-- Verified both API versions require authentication.
-
-**Day 17 Test Results:**
-- 133 tests passed.
-- 0 tests failed.
-- Overall code coverage: 82%.
-- V1 API coverage: 82%.
-- V2 API coverage: 79%.
-
-### Day 17 Deliverable
-
-Completed API versioning with separate V1 and V2 endpoints, V1 deprecation headers, compact V2 summary responses, pagination, filtering, migration documentation and automated API versioning tests.
-
-## Project Status
-
-- Completed up to Day 17.
-- API V1 and V2 successfully implemented.
-- JWT Authentication and API Versioning completed.
-- Automated Testing: 133 Tests Passed.
-- Test Coverage: 82%.
-- All changes pushed to GitHub.
-
-## Future Enhancements
-
-- API Rate Limiting using Flask-Limiter.
-- Advanced Security Improvements.
-- Performance Optimization.
-- Deployment and Production Configuration.
-- Monitoring and Logging Improvements.
-
-## Developer
-
-**Prasanna P**
-
-GitHub: https://github.com/Prasanna-20740
-
-
-
----
-
-## Day 18 - API & Web Performance Optimization
-
-### Features Implemented
-
-**1. SQL Query Optimization**
-- Optimized `GET /api/analytics` using SQL-level aggregation.
-- Used GROUP BY and COUNT() for application status distribution.
-- Used AVG() for average application duration.
-- Used database-level date aggregation for weekday application counts.
-- Reduced unnecessary ORM object loading and Python-side processing.
-
-**2. Composite Database Index**
-- Added composite index `ix_job_application_user_status_applied_date`.
-- Indexed columns: `user_id`, `status`, and `applied_date`.
-- Created and applied Alembic migration.
-- Verified index creation in PostgreSQL.
-
-**3. Redis Analytics Caching**
-- Implemented Redis cache HIT and MISS handling.
-- Configured a 300-second (5-minute) cache TTL.
-- Added cache invalidation when applications are created, updated, or deleted.
-
-**4. Database Query Profiling**
-- Measured SQL query count and execution time.
-- Captured executed SQL statements.
-- Separated analytics aggregation queries from JWT blocklist queries.
-
-**5. Performance Benchmarking**
-- Created `scripts/benchmark_analytics.py`.
-- Generated 10,000 temporary applications and 10,000 history records.
-- Benchmarked cache MISS and cache HIT response times.
-- Added automatic benchmark data cleanup.
-
-### Day 18 Performance Results
-
-| Metric | Result |
-|---|---:|
-| Benchmark applications | 10,000 |
-| Benchmark history records | 10,000 |
-| Cache MISS response time | 93.72 ms |
-| Cache HIT average | 6.64 ms |
-| Cache HIT minimum | 5.06 ms |
-| Cache HIT maximum | 10.07 ms |
-| SQL queries during profiling | 9 |
-| Total SQL execution time | 58.52 ms |
-
-**SQL Query Profile:**
-- 3 analytics aggregation queries during cache MISS.
-- 6 JWT blocklist queries across 6 benchmark requests.
-- Analytics aggregation queries were skipped on cache HIT requests.
-
-### Day 18 Verification
-
-- Verified analytics status distribution and average duration.
-- Verified weekday application counts.
-- Tested Redis cache HIT and MISS behavior.
-- Verified cache invalidation.
-- Confirmed PostgreSQL composite index.
-- Confirmed Alembic migration head.
-- Successfully completed 10,000-record benchmark.
-- Confirmed benchmark data cleanup.
-
-**Day 18 Test Results:**
-- 135 tests passed.
-- 0 tests failed.
-- Execution time: 3.15 seconds.
-
-### Day 18 Deliverable
-
-Completed SQL analytics optimization, PostgreSQL composite indexing, Redis caching, SQL query profiling, and 10,000-record performance benchmarking.
+*Developed as a hands-on Python Flask SaaS project, focusing on backend development, REST API design, API versioning, database management and optimization, authentication, external API integration, caching, email automation, analytics, webhooks, security implementation, background processing, automated testing, and CI/CD.*
